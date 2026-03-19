@@ -27,7 +27,8 @@ from typing import Optional
 from pathlib import Path
 from dotenv import load_dotenv
 
-load_dotenv(Path(__file__).parent.parent / "data_pipeline" / ".env")
+# Load .env file when running locally — silently ignored if file doesn't exist (e.g. on Railway)
+load_dotenv(Path(__file__).parent.parent / "data_pipeline" / ".env", override=False)
 log = logging.getLogger(__name__)
 
 _client = None
@@ -37,9 +38,14 @@ def _get_client():
     if _client is None:
         try:
             from anthropic import Anthropic
-            key = os.getenv("ANTHROPIC_API_KEY")
+            # Strip whitespace — Railway/cloud platforms can inject invisible chars
+            key = (os.getenv("ANTHROPIC_API_KEY") or "").strip()
             if not key:
-                raise ValueError("ANTHROPIC_API_KEY not set in data_pipeline/.env")
+                raise ValueError(
+                    "ANTHROPIC_API_KEY is not set. "
+                    "On Railway: add it under your service → Variables. "
+                    "Locally: add it to data_pipeline/.env"
+                )
             _client = Anthropic(api_key=key)
         except ImportError:
             raise RuntimeError("anthropic package not installed — run: pip install anthropic")
