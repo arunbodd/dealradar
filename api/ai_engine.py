@@ -171,6 +171,13 @@ def analyze_deal(listing: dict, market_stats: dict, similar_listings: list) -> d
     diff  = price - avg
     vs_market = f"${abs(int(diff)):,} {'above' if diff > 0 else 'below'} the ${avg:,} market average" if avg else "market avg unknown"
 
+    title_brand = (listing.get("title_brand") or "Clean").strip()
+    _branded_titles = ("salvage", "rebuilt", "lemon", "flood", "junk", "insurance loss")
+    is_branded_title = title_brand.lower() in _branded_titles
+
+    title_brand_line = f"• ⚠️  TITLE BRAND: {title_brand.upper()} — BRANDED/PROBLEM TITLE DETECTED" if is_branded_title else f"• Title: {title_brand}"
+    dealer_reported_accidents = listing.get('accidents', 0)
+
     context = f"""LISTING DETAILS:
 • {listing.get('year')} {listing.get('make')} {listing.get('model')} {listing.get('trim','')}
 • Listed: ${price:,}  |  MSRP: ${listing.get('base_msrp',0) or 0:,}
@@ -178,7 +185,8 @@ def analyze_deal(listing: dict, market_stats: dict, similar_listings: list) -> d
 • Mileage: {listing.get('mileage',0):,} miles
 • Drivetrain: {listing.get('drivetrain','?')}  |  Color: {listing.get('exterior_color','?')}
 • Condition: {'CPO Certified' if listing.get('is_cpo') else 'Used' if listing.get('is_used') else 'Brand New'}
-• Accidents: {listing.get('accidents',0)} reported  |  One Owner: {'Yes' if listing.get('one_owner') else 'Unknown'}
+• Dealer-reported accidents: {dealer_reported_accidents}  |  One Owner: {'Yes' if listing.get('one_owner') else 'Unknown'}
+{title_brand_line}
 • Dealer: {listing.get('dealer_name','?')} — {listing.get('dealer_city','?')}, {listing.get('dealer_state','?')}
 
 MARKET CONTEXT ({market_stats.get('total',0)} active listings):
@@ -236,16 +244,36 @@ COMPARABLE LISTINGS (similar mileage, same model):
         }
     }]
 
+    # Build title brand warning injection
+    if is_branded_title:
+        title_warning_block = f"""
+⚠️  CRITICAL TITLE BRAND ALERT:
+This vehicle has a {title_brand.upper()} title. This is a MAJOR red flag that MUST dominate your analysis.
+- A {title_brand} title means the vehicle was declared a total loss by an insurance company, severely damaged, or had a major legal/safety event.
+- Even if the dealer reports "no accidents", a branded title IS in direct contradiction with a clean history claim. This is a serious CARFAX discrepancy risk.
+- DealRadar's data comes from dealer-reported fields which may NOT match CARFAX or the actual title history.
+- Branded title vehicles typically sell for 20-40% below market value for a reason — they carry permanent stigma, higher insurance rates, difficult resale, and potential hidden structural or safety issues.
+- Your recommendation MUST be "Pass" or at minimum "Negotiate" with very aggressive price targets (30%+ below market).
+- In red_flags, explicitly state: "CARFAX DISCLAIMER: Dealer reports 0 accidents but title brand is {title_brand} — always pull an independent CARFAX/AutoCheck report before purchasing."
+"""
+    else:
+        title_warning_block = "\n⚠️  CARFAX DISCLAIMER: Dealer-reported accident counts may not match CARFAX or AutoCheck independent reports. Always verify with a paid vehicle history report before purchasing.\n"
+
     try:
         resp = c.messages.create(
             model="claude-sonnet-4-6",
-            max_tokens=900,
+            max_tokens=1000,
             tools=tools,
             tool_choice={"type": "any"},
-            system="""You are an expert car buying advisor — think Consumer Reports meets a sharp negotiator.
+            system=f"""You are an expert car buying advisor — think Consumer Reports meets a sharp negotiator.
 You know dealer pricing tactics, manufacturer incentives, and how to read market data.
 Be honest, specific about numbers, and genuinely helpful to the buyer.
-Never be vague. If the deal is bad, say so. If it's great, say so with reasons.""",
+Never be vague. If the deal is bad, say so. If it's great, say so with reasons.
+
+IMPORTANT — TITLE BRAND AWARENESS:
+- Dealer-reported accident counts are self-reported and may NOT reflect actual vehicle history.
+- If the listing has a SALVAGE, REBUILT, LEMON, or FLOOD title, this MUST be treated as the most important risk factor — more important than price.
+- Always remind buyers to check CARFAX or AutoCheck independently, since listings may show "no accidents" while the title tells a different story.{title_warning_block}""",
             messages=[{"role": "user", "content": f"Analyze this car deal and tell me whether I should buy it:\n\n{context}"}]
         )
         for block in resp.content:
