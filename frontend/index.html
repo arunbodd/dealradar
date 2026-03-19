@@ -1,0 +1,2452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DealRadar · Best Car Deals Across the USA</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚗</text></svg>"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;0,6..96,600;0,6..96,700;1,6..96,400&family=Cinzel:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+/* ══════════════════════════════════════════════════════
+   RESET & BASE
+══════════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #07080D;
+  --bg2:       #0A0C13;
+  --bg3:       #0E1019;
+  --card:      #0B0D15;
+  --border:    rgba(255,255,255,0.05);
+  --border-md: rgba(255,255,255,0.09);
+  --gold:      #C4A253;
+  --gold-soft: rgba(196,162,83,0.10);
+  --blue:      #4A7AB5;
+  --blue2:     #7BA0C8;
+  --cyan:      #4F94A8;
+  --emerald:   #4A9070;
+  --rose:      #A05060;
+  --purple:    #7060A0;
+  --text:      #DDE1EB;
+  --muted:     #4A5568;
+  --subtle:    #78899C;
+  --glow:      rgba(196,162,83,0.06);
+  --radius:    12px;
+  --radius-sm: 8px;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ══════════════════════════════════════════════════════
+   ANIMATED BACKGROUND
+══════════════════════════════════════════════════════ */
+.bg-mesh {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse 70% 40% at 15% -5%, rgba(196,162,83,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 30% at 85% 110%, rgba(74,122,181,0.06) 0%, transparent 55%),
+    radial-gradient(ellipse 40% 25% at 50% 50%, rgba(255,255,255,0.015) 0%, transparent 60%);
+}
+
+/* ══════════════════════════════════════════════════════
+   HEADER / NAV
+══════════════════════════════════════════════════════ */
+header {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  backdrop-filter: blur(24px) saturate(1.2);
+  background: rgba(7,8,13,0.92);
+  border-bottom: 1px solid var(--border);
+  padding: 0 2rem;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+
+.logo {
+  display: flex; align-items: center; gap: 12px;
+  font-family: 'Bodoni Moda', serif;
+  font-size: 1.35rem; font-weight: 600; color: var(--text);
+  letter-spacing: 0.04em;
+  text-decoration: none;
+}
+.logo-mark {
+  width: 28px; height: 28px;
+  border: 1px solid var(--gold);
+  border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Bodoni Moda', serif;
+  font-size: 0.85rem; font-weight: 700; color: var(--gold);
+  letter-spacing: 0;
+  flex-shrink: 0;
+}
+.logo-divider {
+  width: 1px; height: 16px;
+  background: var(--border-md);
+}
+.logo-sub {
+  font-size: 0.6rem; font-weight: 500; color: var(--muted);
+  letter-spacing: 0.16em; text-transform: uppercase;
+  font-family: 'Cinzel', serif;
+}
+
+.header-right {
+  display: flex; align-items: center; gap: 20px;
+}
+
+.api-badge {
+  display: flex; align-items: center; gap: 8px;
+  border-left: 1px solid var(--border-md);
+  padding-left: 20px;
+  font-size: 0.72rem; color: var(--subtle); font-weight: 400;
+  letter-spacing: 0.04em;
+}
+.api-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--emerald); opacity: 0.8;
+}
+@keyframes pulse { 0%,100%{opacity:0.8} 50%{opacity:0.3} }
+
+/* ══════════════════════════════════════════════════════
+   HERO
+══════════════════════════════════════════════════════ */
+.hero {
+  position: relative; z-index: 1;
+  padding: 76px 2rem 16px;
+  text-align: center;
+  max-width: 960px; margin: 0 auto;
+}
+
+.hero-eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.25);
+  border-radius: 20px; padding: 3px 12px; margin-bottom: 10px;
+  font-size: 0.72rem; font-weight: 600; color: var(--blue2);
+  letter-spacing: 0.05em; text-transform: uppercase;
+}
+
+.hero h1 {
+  font-family: 'Bodoni Moda', serif;
+  font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+  font-weight: 700; line-height: 1.2;
+  background: linear-gradient(135deg, #fff 0%, #94a3b8 50%, var(--blue2) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 6px;
+}
+
+.hero p {
+  color: var(--subtle); font-size: 0.88rem; line-height: 1.5;
+  max-width: 580px; margin: 0 auto 14px;
+}
+
+/* ══════════════════════════════════════════════════════
+   SEARCH BOX
+══════════════════════════════════════════════════════ */
+.search-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px 20px;
+  box-shadow: 0 0 40px rgba(59,130,246,0.08), 0 12px 40px rgba(0,0,0,0.35);
+  text-align: left;
+}
+
+.search-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 120px 130px auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.field { display: flex; flex-direction: column; gap: 7px; }
+
+label {
+  font-size: 0.72rem; font-weight: 600; color: var(--muted);
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
+
+.inp, select {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.92rem; padding: 11px 14px;
+  outline: none; width: 100%;
+  transition: border-color .2s, box-shadow .2s;
+  appearance: none;
+}
+.inp:focus, select:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+}
+.inp::placeholder { color: var(--muted); }
+
+select option { background: #1e293b; color: var(--text); }
+
+.btn-search {
+  background: linear-gradient(135deg, var(--blue), #6366f1);
+  border: none; border-radius: var(--radius-sm);
+  color: #fff; font-size: 0.95rem; font-weight: 700;
+  padding: 11px 28px; cursor: pointer; white-space: nowrap;
+  transition: transform .15s, box-shadow .15s, opacity .15s;
+  box-shadow: 0 4px 20px rgba(59,130,246,0.35);
+  display: flex; align-items: center; gap: 8px;
+}
+.btn-search:hover { transform: translateY(-1px); box-shadow: 0 6px 28px rgba(59,130,246,0.5); }
+.btn-search:active { transform: translateY(0); }
+.btn-search:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+.filters-row {
+  display: flex; gap: 12px; margin-top: 14px; align-items: center;
+}
+
+.chip-group { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.chip {
+  font-family: 'Cinzel', serif;
+  background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+  border-radius: 20px; padding: 5px 14px; font-size: 0.72rem; color: var(--subtle);
+  cursor: pointer; transition: all .15s; user-select: none; letter-spacing: 0.06em;
+}
+.chip:hover, .chip.active {
+  background: rgba(59,130,246,0.12); border-color: rgba(59,130,246,0.35);
+  color: var(--blue2);
+}
+
+/* ══════════════════════════════════════════════════════
+   STATS BAR
+══════════════════════════════════════════════════════ */
+.stats-bar {
+  position: relative; z-index: 1;
+  margin-bottom: 12px;
+  display: flex; gap: 8px; flex-wrap: wrap;
+  animation: slideUp .4s ease;
+}
+
+.stat-pill {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 6px; padding: 6px 14px;
+  display: flex; align-items: center; gap: 8px;
+}
+.stat-label { font-family: 'Cinzel', serif; font-size: 0.55rem; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; }
+.stat-value { font-size: 0.88rem; font-weight: 600; color: var(--text); font-family: 'Cormorant Garamond', serif; }
+.stat-value.green { color: var(--emerald); }
+.stat-value.blue  { color: var(--blue2); }
+.stat-value.gold  { color: var(--gold); }
+
+/* ══════════════════════════════════════════════════════
+   RESULTS LAYOUT — 3 column: filters | listings | chat
+══════════════════════════════════════════════════════ */
+.results-layout {
+  position: relative; z-index: 1;
+  max-width: 1600px; margin: 56px auto 0;
+  padding: 12px 1.5rem 40px;
+  display: grid;
+  grid-template-columns: 210px 1fr 360px;
+  gap: 16px;
+  align-items: start;
+}
+
+/* Sidebar */
+.sidebar {
+  position: sticky;
+  top: 68px;
+  height: calc(100vh - 68px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  padding-bottom: 24px;
+}
+.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+.sidebar::-webkit-scrollbar-track { background: transparent; }
+
+.sidebar-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 14px 16px; margin-bottom: 8px;
+}
+
+.sidebar-title {
+  font-family: 'Cinzel', serif;
+  font-size: 0.58rem; font-weight: 600; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.14em; margin-bottom: 12px;
+}
+
+.sort-options { display: flex; flex-direction: column; gap: 4px; }
+
+.sort-btn {
+  background: none; border: 1px solid transparent;
+  border-radius: var(--radius-sm); color: var(--subtle);
+  font-size: 0.72rem; padding: 7px 10px; cursor: pointer;
+  text-align: left; transition: all .15s; display: flex; align-items: center; gap: 8px;
+  font-family: 'Cinzel', serif; letter-spacing: 0.06em;
+}
+.sort-btn:hover { background: rgba(255,255,255,0.03); color: var(--text); }
+.sort-btn.active {
+  background: var(--gold-soft);
+  border-color: rgba(196,162,83,0.25);
+  color: var(--gold);
+}
+
+.range-row { display: flex; gap: 8px; }
+.range-row .inp { width: 50%; }
+
+/* Results grid */
+.results-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 20px;
+}
+.results-count {
+  font-size: 0.875rem; color: var(--muted);
+}
+.results-count strong { color: var(--text); }
+
+.results-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+/* ══════════════════════════════════════════════════════
+   DEAL CARD
+══════════════════════════════════════════════════════ */
+.deal-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+  transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+  cursor: pointer; display: flex; flex-direction: column;
+  animation: fadeIn .3s ease;
+}
+.deal-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 48px rgba(0,0,0,0.5), 0 0 0 1px rgba(196,162,83,0.15);
+  border-color: rgba(196,162,83,0.18);
+}
+
+.card-img-wrap {
+  position: relative; height: 160px; background: var(--bg3);
+  overflow: hidden; flex-shrink: 0;
+}
+.card-img {
+  width: 100%; height: 100%; object-fit: cover;
+  transition: transform .4s ease;
+}
+.deal-card:hover .card-img { transform: scale(1.04); }
+.card-img-placeholder {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 3rem; background: linear-gradient(135deg, var(--bg3), var(--bg2));
+}
+
+.card-badges {
+  position: absolute; top: 10px; left: 10px;
+  display: flex; gap: 6px; flex-wrap: wrap;
+}
+.badge {
+  font-family: 'Cinzel', serif;
+  border-radius: 3px; padding: 3px 8px;
+  font-size: 0.55rem; font-weight: 600; letter-spacing: 0.1em;
+  text-transform: uppercase; backdrop-filter: blur(4px);
+}
+.badge-cpo      { background: rgba(74,144,112,0.75);  color: #c0edd8; border: 1px solid rgba(74,144,112,0.4); }
+.badge-new      { background: rgba(74,122,181,0.75);  color: #b8d0eb; border: 1px solid rgba(74,122,181,0.4); }
+.badge-used     { background: rgba(60,70,90,0.75);    color: #99aabb; border: 1px solid rgba(100,116,139,0.3); }
+.badge-hot      { background: rgba(160,80,96,0.8);    color: #f0c0c8; border: 1px solid rgba(160,80,96,0.4); }
+.badge-deal     { background: rgba(196,162,83,0.75);  color: #0a0b10; border: 1px solid rgba(196,162,83,0.4); }
+.badge-fresh    { background: rgba(79,148,168,0.75);  color: #b8e0eb; border: 1px solid rgba(79,148,168,0.4); animation: pulse-cyan 2.5s infinite; }
+.badge-pricedrop{ background: rgba(74,144,112,0.75);  color: #c0edd8; border: 1px solid rgba(74,144,112,0.4); animation: pulse-green 2.5s infinite; }
+
+@keyframes pulse-cyan  { 0%,100%{box-shadow:0 0 0 0 rgba(6,182,212,0.5)} 50%{box-shadow:0 0 0 5px rgba(6,182,212,0)} }
+@keyframes pulse-green { 0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,0.5)} 50%{box-shadow:0 0 0 5px rgba(16,185,129,0)} }
+
+.card-score-ring {
+  position: absolute; top: 10px; right: 10px;
+  width: 42px; height: 42px;
+}
+.card-score-ring svg { transform: rotate(-90deg); }
+.ring-bg  { fill: none; stroke: rgba(255,255,255,0.1); stroke-width: 3; }
+.ring-fg  { fill: none; stroke-width: 3; stroke-linecap: round; transition: stroke-dashoffset .6s ease; }
+.ring-text {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.6rem; font-weight: 800; color: var(--text);
+  transform: none;
+}
+
+.card-body { padding: 16px; flex: 1; display: flex; flex-direction: column; gap: 10px; }
+
+.card-title {
+  font-family: 'Bodoni Moda', serif;
+  font-size: 1.0rem; font-weight: 600; color: var(--text);
+  line-height: 1.25; letter-spacing: 0.02em;
+}
+.card-trim { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+
+.card-price-row {
+  display: flex; align-items: baseline; justify-content: space-between;
+}
+.card-price {
+  font-size: 1.35rem; font-weight: 700;
+  font-family: 'Cormorant Garamond', serif;
+  color: var(--gold);
+  letter-spacing: 0.02em;
+}
+.card-msrp {
+  font-size: 0.8rem; color: var(--muted); text-decoration: line-through;
+}
+
+.card-savings {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(74,144,112,0.08); border: 1px solid rgba(74,144,112,0.18);
+  border-radius: 4px; padding: 3px 9px;
+  font-size: 0.72rem; font-weight: 600; color: var(--emerald);
+  letter-spacing: 0.02em;
+}
+
+.card-meta {
+  display: flex; gap: 8px; flex-wrap: wrap;
+}
+.meta-tag {
+  background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+  border-radius: 5px; padding: 3px 8px;
+  font-size: 0.72rem; color: var(--subtle);
+  display: flex; align-items: center; gap: 4px;
+}
+
+.card-dealer {
+  display: flex; align-items: center; gap: 7px;
+  padding-top: 10px; border-top: 1px solid var(--border);
+  font-size: 0.8rem; color: var(--muted);
+}
+.dealer-name { font-weight: 600; color: var(--subtle); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.card-actions {
+  display: flex; gap: 6px; padding: 0 14px 14px;
+}
+.btn-carfax, .btn-detail {
+  flex: 1; border: none; border-radius: 4px;
+  font-size: 0.72rem; font-weight: 500; padding: 7px 6px; cursor: pointer;
+  transition: all .15s; text-align: center; text-decoration: none;
+  display: flex; align-items: center; justify-content: center; gap: 4px;
+  letter-spacing: 0.04em; text-transform: uppercase;
+}
+.btn-carfax {
+  background: transparent; border: 1px solid var(--border-md);
+  color: var(--subtle);
+}
+.btn-carfax:hover { border-color: var(--gold); color: var(--gold); background: var(--gold-soft); }
+.btn-detail {
+  background: transparent; border: 1px solid var(--border-md);
+  color: var(--subtle);
+}
+.btn-detail:hover { border-color: var(--blue); color: var(--blue2); background: rgba(74,122,181,0.08); }
+
+/* ══════════════════════════════════════════════════════
+   SCORE BAR (sidebar)
+══════════════════════════════════════════════════════ */
+.score-breakdown { display: flex; flex-direction: column; gap: 10px; }
+.score-row { display: flex; flex-direction: column; gap: 4px; }
+.score-label { display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--muted); }
+.score-bar { height: 4px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden; }
+.score-fill { height: 100%; border-radius: 2px; transition: width .5s ease; }
+.fill-blue   { background: linear-gradient(90deg, var(--blue), var(--cyan)); }
+.fill-green  { background: linear-gradient(90deg, var(--emerald), #34d399); }
+.fill-purple { background: linear-gradient(90deg, var(--purple), #a78bfa); }
+.fill-gold   { background: linear-gradient(90deg, var(--gold), #fbbf24); }
+
+/* ══════════════════════════════════════════════════════
+   INVENTORY HEALTH PANEL (sidebar)
+══════════════════════════════════════════════════════ */
+.inv-health-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px;
+}
+.inv-health-header .sidebar-title { margin: 0; }
+.inv-refresh-btn {
+  background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.3);
+  color: var(--blue2); border-radius: 6px; padding: 3px 10px;
+  font-size: 0.7rem; font-weight: 600; cursor: pointer; transition: all .2s;
+}
+.inv-refresh-btn:hover { background: rgba(59,130,246,0.3); }
+.inv-refresh-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.inv-stats-row {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;
+}
+.inv-stat {
+  background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+  border-radius: 8px; padding: 8px 10px; text-align: center;
+}
+.inv-stat-val { font-size: 1.1rem; font-weight: 800; line-height: 1; }
+.inv-stat-lbl { font-size: 0.67rem; color: var(--muted); margin-top: 3px; font-weight: 500; text-transform: uppercase; letter-spacing: .04em; }
+.inv-stat-val.green { color: var(--emerald); }
+.inv-stat-val.rose  { color: var(--rose); }
+.inv-stat-val.cyan  { color: var(--cyan); }
+
+.inv-data-age {
+  display: flex; justify-content: space-between;
+  font-size: 0.75rem; color: var(--muted);
+  padding: 6px 8px; background: rgba(255,255,255,0.03);
+  border-radius: 6px; margin-bottom: 10px;
+}
+.inv-data-age span:last-child { color: var(--subtle); }
+
+.inv-section-title {
+  font-size: 0.72rem; font-weight: 700; color: var(--subtle);
+  text-transform: uppercase; letter-spacing: .06em;
+  margin: 10px 0 6px;
+}
+.inv-item {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+  gap: 6px;
+}
+.inv-item:last-child { border-bottom: none; }
+.inv-item-name { font-size: 0.78rem; color: var(--text); line-height: 1.3; flex: 1; }
+.inv-item-sub  { font-size: 0.68rem; color: var(--muted); }
+.inv-item-price { font-size: 0.78rem; font-weight: 700; white-space: nowrap; }
+.inv-item-price.drop  { color: var(--emerald); }
+.inv-item-price.removed { color: var(--rose); text-decoration: line-through; opacity:.7; }
+.inv-item-drop-arrow { font-size: 0.65rem; color: var(--emerald); }
+
+.inv-empty { font-size: 0.78rem; color: var(--muted); padding: 6px 0; }
+
+/* ══════════════════════════════════════════════════════
+   FILTER PANELS (sidebar)
+══════════════════════════════════════════════════════ */
+.filter-chips {
+  display: flex; flex-wrap: wrap; gap: 5px;
+}
+.filter-chip {
+  font-family: 'Cinzel', serif;
+  background: transparent; border: 1px solid var(--border);
+  border-radius: 4px; padding: 4px 11px; font-size: 0.68rem; color: var(--subtle);
+  cursor: pointer; transition: all .15s; user-select: none; letter-spacing: 0.06em;
+}
+.filter-chip:hover {
+  border-color: var(--border-md); color: var(--text);
+}
+.filter-chip.active {
+  background: var(--gold-soft);
+  border-color: rgba(196,162,83,0.3);
+  color: var(--gold);
+}
+.filter-chip .chip-count {
+  font-size: 0.65rem; color: var(--muted); margin-left: 3px;
+}
+.filter-chip.active .chip-count { color: rgba(96,165,250,0.7); }
+
+.filter-toggle {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 0; cursor: pointer; user-select: none;
+}
+.filter-toggle-label { font-family: 'Cinzel', serif; font-size: 0.7rem; letter-spacing: 0.06em; color: var(--subtle); display: flex; align-items: center; gap: 6px; }
+.filter-toggle-count { font-family: 'Cormorant Garamond', serif; font-size: 0.78rem; color: var(--muted); }
+
+.toggle-switch {
+  width: 36px; height: 20px; border-radius: 10px;
+  background: rgba(255,255,255,0.08); border: 1px solid var(--border);
+  position: relative; transition: all .2s; flex-shrink: 0;
+}
+.toggle-switch::after {
+  content: ''; position: absolute; top: 2px; left: 2px;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--muted); transition: all .2s;
+}
+.toggle-switch.on { background: rgba(59,130,246,0.3); border-color: rgba(59,130,246,0.5); }
+.toggle-switch.on::after { left: 18px; background: var(--blue2); }
+
+.mileage-range {
+  display: flex; flex-direction: column; gap: 8px;
+}
+.mileage-range input[type="range"] {
+  -webkit-appearance: none; width: 100%; height: 4px;
+  background: rgba(255,255,255,0.08); border-radius: 2px; outline: none;
+}
+.mileage-range input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 16px; height: 16px;
+  border-radius: 50%; background: var(--blue); cursor: pointer;
+  box-shadow: 0 0 8px rgba(59,130,246,0.4);
+}
+.mileage-range-labels {
+  display: flex; justify-content: space-between;
+  font-family: 'Cinzel', serif; font-size: 0.58rem; letter-spacing: 0.08em; color: var(--muted);
+}
+.mileage-val { font-family: 'Cormorant Garamond', serif; font-size: 1rem; font-weight: 600; color: var(--blue2); text-align: center; letter-spacing: 0.02em; }
+
+.color-select {
+  font-family: 'Cinzel', serif; letter-spacing: 0.06em;
+  width: 100%; background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  color: var(--text); font-size: 0.72rem; padding: 8px 10px;
+  outline: none; cursor: pointer;
+}
+.color-select:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
+.color-select option { background: #1e293b; color: var(--text); }
+
+/* ══════════════════════════════════════════════════════
+   AI SEARCH BAR
+══════════════════════════════════════════════════════ */
+.ai-search-wrap {
+  margin-top: 16px; border-top: 1px solid var(--border); padding-top: 16px;
+}
+.ai-search-row {
+  display: flex; gap: 10px; align-items: center;
+}
+.ai-input {
+  flex: 1; background: rgba(139,92,246,0.06);
+  border: 1px solid rgba(139,92,246,0.25); border-radius: var(--radius-sm);
+  color: var(--text); font-family: 'Inter', sans-serif;
+  font-size: 0.92rem; padding: 11px 14px; outline: none;
+  transition: border-color .2s, box-shadow .2s;
+}
+.ai-input:focus {
+  border-color: var(--purple); box-shadow: 0 0 0 3px rgba(139,92,246,0.15);
+}
+.ai-input::placeholder { color: var(--muted); }
+.btn-ai-search {
+  background: linear-gradient(135deg, var(--purple), #6366f1);
+  border: none; border-radius: var(--radius-sm);
+  color: #fff; font-size: 0.9rem; font-weight: 700;
+  padding: 11px 20px; cursor: pointer; white-space: nowrap;
+  transition: all .15s; box-shadow: 0 4px 20px rgba(139,92,246,0.35);
+}
+.btn-ai-search:hover { transform: translateY(-1px); box-shadow: 0 6px 28px rgba(139,92,246,0.5); }
+.btn-ai-search:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.ai-understanding {
+  margin-top: 10px; padding: 8px 12px;
+  background: rgba(139,92,246,0.08); border: 1px solid rgba(139,92,246,0.2);
+  border-radius: var(--radius-sm); font-size: 0.8rem; color: #a78bfa;
+  display: none;
+}
+
+/* ══════════════════════════════════════════════════════
+   AI ANALYSIS MODAL
+══════════════════════════════════════════════════════ */
+.ai-modal-overlay {
+  position: fixed; inset: 0; z-index: 210;
+  background: rgba(0,0,0,0.8); backdrop-filter: blur(10px);
+  display: none; align-items: center; justify-content: center; padding: 24px;
+}
+.ai-modal-overlay.open { display: flex; animation: fadeIn .2s; }
+.ai-modal {
+  background: var(--bg2); border: 1px solid var(--border-md);
+  border-radius: 16px; width: 100%; max-width: 640px;
+  max-height: 90vh; display: flex; flex-direction: column;
+  box-shadow: 0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(196,162,83,0.08);
+}
+.ai-modal-header {
+  flex-shrink: 0;
+  padding: 20px 24px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.ai-modal-body {
+  padding: 24px; display: flex; flex-direction: column; gap: 18px;
+  overflow-y: auto; flex: 1;
+  scrollbar-width: thin; scrollbar-color: rgba(139,92,246,0.3) transparent;
+}
+.ai-modal-body::-webkit-scrollbar { width: 5px; }
+.ai-modal-body::-webkit-scrollbar-thumb { background: rgba(139,92,246,0.35); border-radius: 4px; }
+.ai-modal-body::-webkit-scrollbar-track { background: transparent; }
+
+.rec-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  border-radius: 8px; padding: 6px 16px;
+  font-size: 1rem; font-weight: 800; letter-spacing: 0.03em;
+}
+.rec-strong-buy { background: rgba(74,144,112,0.12); color: var(--emerald); border: 1px solid rgba(74,144,112,0.3); }
+.rec-buy        { background: rgba(74,122,181,0.1);  color: var(--blue2);   border: 1px solid rgba(74,122,181,0.25); }
+.rec-negotiate  { background: var(--gold-soft);      color: var(--gold);    border: 1px solid rgba(196,162,83,0.3); }
+.rec-wait       { background: rgba(112,96,160,0.1);  color: #9888c4;        border: 1px solid rgba(112,96,160,0.25); }
+.rec-pass       { background: rgba(160,80,96,0.1);   color: var(--rose);    border: 1px solid rgba(160,80,96,0.25); }
+
+.ai-headline {
+  font-size: 1.15rem; font-weight: 700; color: var(--text); line-height: 1.4;
+}
+.ai-section-title {
+  font-size: 0.7rem; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .08em; margin-bottom: 8px;
+}
+.ai-prose { font-size: 0.9rem; color: var(--subtle); line-height: 1.6; }
+
+.ai-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.ai-flag-list { display: flex; flex-direction: column; gap: 6px; }
+.ai-flag {
+  display: flex; align-items: flex-start; gap: 8px;
+  font-size: 0.83rem; color: var(--subtle); line-height: 1.4;
+}
+.ai-flag-icon { flex-shrink: 0; font-size: 0.9rem; }
+
+.ai-tips-list { display: flex; flex-direction: column; gap: 8px; }
+.ai-tip {
+  display: flex; align-items: flex-start; gap: 10px;
+  background: rgba(245,158,11,0.07); border: 1px solid rgba(245,158,11,0.15);
+  border-radius: 8px; padding: 10px 12px;
+  font-size: 0.83rem; color: var(--subtle); line-height: 1.4;
+}
+.ai-tip-num {
+  flex-shrink: 0; width: 18px; height: 18px; border-radius: 50%;
+  background: rgba(245,158,11,0.2); color: var(--gold);
+  font-size: 0.7rem; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+}
+.ai-bottom-line {
+  background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.2);
+  border-radius: 10px; padding: 14px 16px;
+  font-size: 0.9rem; color: var(--text); font-weight: 500; line-height: 1.5;
+}
+.ai-loading {
+  text-align: center; padding: 40px 20px;
+  font-size: 0.9rem; color: var(--muted);
+}
+.ai-spinner {
+  width: 36px; height: 36px; border: 3px solid rgba(139,92,246,0.2);
+  border-top-color: var(--purple); border-radius: 50%;
+  animation: spin .8s linear infinite; margin: 0 auto 16px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Market Pulse sidebar card */
+.pulse-text {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 0.9rem; color: var(--subtle); line-height: 1.7;
+  white-space: pre-line;
+}
+.btn-pulse {
+  width: 100%; margin-top: 10px; padding: 7px;
+  background: transparent; border: 1px solid var(--border-md);
+  border-radius: 4px; color: var(--subtle); font-size: 0.7rem; font-weight: 500;
+  cursor: pointer; transition: all .2s; letter-spacing: 0.04em; text-transform: uppercase;
+}
+.btn-pulse:hover { border-color: var(--gold); color: var(--gold); background: var(--gold-soft); }
+.btn-pulse:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* ══════════════════════════════════════════════════════
+   EMPTY / LOADING / ERROR STATES
+══════════════════════════════════════════════════════ */
+.state-wrap {
+  grid-column: 1 / -1; text-align: center; padding: 60px 20px;
+}
+.state-emoji { font-size: 3.5rem; margin-bottom: 16px; }
+.state-title { font-size: 1.2rem; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+.state-sub   { font-family: 'Cormorant Garamond', serif; font-size: 1rem; font-style: italic; color: var(--muted); }
+
+.skeleton { border-radius: var(--radius); overflow: hidden; }
+.skel-img  { height: 160px; background: linear-gradient(90deg, var(--bg3) 25%, var(--card) 50%, var(--bg3) 75%); background-size: 200%; animation: shimmer 1.4s infinite; }
+.skel-body { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.skel-line { height: 12px; border-radius: 6px; background: linear-gradient(90deg, var(--bg3) 25%, var(--card) 50%, var(--bg3) 75%); background-size: 200%; animation: shimmer 1.4s infinite; }
+.skel-line.w60 { width: 60%; }
+.skel-line.w40 { width: 40%; }
+@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+/* ══════════════════════════════════════════════════════
+   PAGINATION
+══════════════════════════════════════════════════════ */
+.pagination {
+  display: flex; align-items: center; justify-content: center;
+  gap: 8px; margin-top: 32px;
+}
+.page-btn {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--subtle); cursor: pointer;
+  font-size: 0.875rem; padding: 7px 14px; transition: all .15s;
+}
+.page-btn:hover { border-color: var(--blue); color: var(--blue2); }
+.page-btn.active { background: rgba(59,130,246,0.15); border-color: var(--blue); color: var(--blue2); font-weight: 700; }
+.page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* ══════════════════════════════════════════════════════
+   MODAL (deal detail)
+══════════════════════════════════════════════════════ */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.75); backdrop-filter: blur(8px);
+  display: none; align-items: center; justify-content: center; padding: 24px;
+}
+.modal-overlay.open { display: flex; animation: fadeIn .2s; }
+.modal {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 20px; width: 100%; max-width: 700px;
+  max-height: 90vh; overflow-y: auto;
+}
+.modal-header {
+  position: sticky; top: 0; background: var(--bg2);
+  padding: 20px 24px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  backdrop-filter: blur(10px);
+}
+.modal-title { font-family: 'Bodoni Moda', serif; font-size: 1.1rem; font-weight: 600; letter-spacing: 0.02em; }
+.modal-close {
+  background: rgba(255,255,255,0.06); border: none; border-radius: 8px;
+  color: var(--muted); cursor: pointer; font-size: 1.1rem; padding: 6px 10px;
+  transition: all .15s;
+}
+.modal-close:hover { background: rgba(255,255,255,0.1); color: var(--text); }
+.modal-body { padding: 24px; display: flex; flex-direction: column; gap: 20px; }
+
+.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.detail-item { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+.detail-label { font-family: 'Cinzel', serif; font-size: 0.6rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
+.detail-value { font-size: 0.95rem; font-weight: 600; color: var(--text); }
+
+/* ══════════════════════════════════════════════════════
+   BEST DEAL HIGHLIGHT
+══════════════════════════════════════════════════════ */
+.best-deal-banner {
+  position: relative; overflow: hidden;
+  background: var(--gold-soft);
+  border: 1px solid rgba(196,162,83,0.2);
+  border-radius: var(--radius); padding: 14px 20px;
+  display: flex; align-items: center; gap: 16px;
+  margin-bottom: 16px;
+}
+.best-deal-banner::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, var(--gold), rgba(196,162,83,0.1), transparent);
+}
+.bdb-eyebrow {
+  font-family: 'Cinzel', serif;
+  font-size: 0.55rem; font-weight: 600; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--gold); margin-bottom: 3px;
+}
+.bdb-title { font-weight: 600; color: var(--text); font-size: 0.88rem; }
+.bdb-sub   { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+.bdb-price { margin-left: auto; text-align: right; }
+.bdb-price-val {
+  font-size: 1.25rem; font-weight: 600; color: var(--gold);
+  font-family: 'Cormorant Garamond', serif; letter-spacing: 0.02em;
+}
+.bdb-savings   { font-size: 0.72rem; color: var(--emerald); font-weight: 500; margin-top: 2px; }
+
+/* ══════════════════════════════════════════════════════
+   API USAGE PANEL (bottom-right)
+══════════════════════════════════════════════════════ */
+.api-panel {
+  position: fixed; bottom: 20px; right: 20px; z-index: 50;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 12px 16px; min-width: 180px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
+.api-panel-title { font-family: 'Cinzel', serif; font-size: 0.6rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
+.api-meter { height: 5px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden; margin-bottom: 6px; }
+.api-fill  { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--emerald), var(--blue)); transition: width .5s; }
+.api-text  { font-size: 0.78rem; color: var(--subtle); display: flex; justify-content: space-between; }
+
+/* ══════════════════════════════════════════════════════
+   ANIMATIONS
+══════════════════════════════════════════════════════ */
+@keyframes fadeIn   { from{opacity:0} to{opacity:1} }
+@keyframes slideUp  { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+
+/* ══════════════════════════════════════════════════════
+   CHAT PANEL
+══════════════════════════════════════════════════════ */
+.chat-panel {
+  position: sticky; top: 68px;
+  height: calc(100vh - 80px);
+  display: flex; flex-direction: column;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+}
+.chat-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px; border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.chat-header-title {
+  font-family: 'Bodoni Moda', serif;
+  font-weight: 600; font-size: 1rem; color: var(--text);
+  letter-spacing: 0.04em;
+  display: flex; align-items: center; gap: 10px;
+}
+.chat-header-badge {
+  font-size: 0.55rem; font-weight: 600; color: var(--gold);
+  background: var(--gold-soft); border: 1px solid rgba(196,162,83,0.25);
+  border-radius: 3px; padding: 2px 7px; letter-spacing: 0.12em; text-transform: uppercase;
+  font-family: 'Inter', sans-serif;
+}
+.chat-messages {
+  flex: 1; overflow-y: auto; padding: 12px;
+  display: flex; flex-direction: column; gap: 8px;
+  scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.08) transparent;
+}
+.chat-messages::-webkit-scrollbar { width: 3px; }
+.chat-messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+.chat-msg {
+  padding: 9px 12px; border-radius: 8px;
+  font-size: 0.82rem; line-height: 1.55; animation: fadeIn .2s ease;
+}
+.chat-msg-user {
+  align-self: flex-end; max-width: 88%;
+  background: rgba(196,162,83,0.08); border: 1px solid rgba(196,162,83,0.18);
+  color: var(--text); border-bottom-right-radius: 2px;
+}
+.chat-msg-ai {
+  align-self: flex-start; max-width: 98%;
+  background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+  color: var(--text); border-bottom-left-radius: 2px;
+}
+.chat-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+.chat-chip {
+  font-family: 'Cinzel', serif;
+  background: transparent; border: 1px solid var(--border-md);
+  border-radius: 3px; padding: 3px 8px;
+  font-size: 0.7rem; color: var(--subtle); cursor: pointer; transition: all .15s;
+  letter-spacing: 0.03em;
+}
+.chat-chip:hover {
+  border-color: var(--gold); color: var(--gold); background: var(--gold-soft);
+}
+/* Tool call blocks */
+.chat-tool-call {
+  align-self: stretch;
+  background: rgba(74,144,112,0.04); border: 1px solid rgba(74,144,112,0.12);
+  border-radius: 8px; overflow: hidden; font-size: 0.76rem; animation: fadeIn .2s ease;
+}
+.tool-call-header {
+  display: flex; align-items: center; gap: 7px;
+  padding: 6px 11px; cursor: pointer;
+  color: var(--emerald); font-weight: 500; user-select: none; letter-spacing: 0.02em;
+}
+.tool-call-header:hover { background: rgba(74,144,112,0.05); }
+.tool-tag {
+  margin-left: auto; font-size: 0.6rem; color: var(--muted);
+  background: rgba(255,255,255,0.04); border-radius: 4px; padding: 2px 6px; font-weight: 400;
+  letter-spacing: 0.06em; text-transform: uppercase;
+}
+.tool-toggle { font-size: 0.6rem; color: var(--muted); transition: transform .15s; margin-left: 2px; }
+.chat-tool-call.open .tool-toggle { transform: rotate(180deg); }
+.tool-call-body {
+  display: none; padding: 0 11px 10px;
+  flex-direction: column; gap: 6px;
+  border-top: 1px solid rgba(74,144,112,0.1);
+}
+.chat-tool-call.open .tool-call-body { display: flex; }
+.tool-io-label {
+  font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.12em;
+  color: var(--muted); margin-bottom: 3px; margin-top: 7px;
+}
+.tool-json {
+  background: rgba(0,0,0,0.35); border-radius: 4px; padding: 8px;
+  font-family: 'Courier New', monospace; font-size: 0.68rem;
+  color: #86c4a8; overflow-x: auto; max-height: 130px; overflow-y: auto;
+  scrollbar-width: thin; white-space: pre-wrap; word-break: break-word;
+  margin: 0; border: 1px solid rgba(255,255,255,0.04);
+}
+/* Thinking animation */
+.chat-thinking {
+  align-self: flex-start; display: flex; align-items: center; gap: 8px;
+  color: var(--muted); font-size: 0.75rem; padding: 8px 12px;
+}
+.thinking-dots { display: flex; gap: 5px; }
+.thinking-dots span {
+  width: 4px; height: 4px; border-radius: 50%; background: var(--gold);
+  animation: thinkBounce 1.4s infinite;
+}
+.thinking-dots span:nth-child(2) { animation-delay: .18s; }
+.thinking-dots span:nth-child(3) { animation-delay: .36s; }
+@keyframes thinkBounce {
+  0%,60%,100% { transform: translateY(0); opacity: 0.3; }
+  30% { transform: translateY(-4px); opacity: 0.9; }
+}
+/* Chat footer */
+.chat-footer {
+  flex-shrink: 0; padding: 10px 12px; border-top: 1px solid var(--border);
+  display: flex; gap: 8px; align-items: flex-end;
+}
+.chat-input {
+  flex: 1; background: rgba(255,255,255,0.025); border: 1px solid var(--border-md);
+  border-radius: 8px; color: var(--text); font-family: 'Inter', sans-serif;
+  font-size: 0.82rem; padding: 9px 12px; outline: none; resize: none;
+  min-height: 38px; max-height: 90px; transition: border-color .2s; scrollbar-width: none;
+}
+.chat-input:focus { border-color: var(--gold); box-shadow: 0 0 0 2px rgba(196,162,83,0.08); }
+.chat-input::placeholder { color: var(--muted); }
+.btn-chat-send {
+  width: 36px; height: 36px; flex-shrink: 0;
+  background: var(--gold); border: none; border-radius: 8px;
+  color: #07080D; font-size: 0.9rem; font-weight: 700;
+  cursor: pointer; transition: all .15s;
+  display: flex; align-items: center; justify-content: center;
+}
+.btn-chat-send:hover { background: #d4b063; box-shadow: 0 4px 16px rgba(196,162,83,0.3); }
+.btn-chat-send:active { transform: scale(0.96); }
+.btn-chat-send:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* ══════════════════════════════════════════════════════
+   CHAT HISTORY DRAWER (bottom of chat panel)
+══════════════════════════════════════════════════════ */
+.chat-history-toggle {
+  flex-shrink: 0; padding: 6px 14px;
+  border-top: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  cursor: pointer; user-select: none;
+}
+.chat-history-toggle:hover { background: rgba(255,255,255,0.02); }
+.chat-history-label {
+  font-size: 0.6rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--muted);
+}
+.chat-history-count {
+  font-size: 0.6rem; color: var(--gold); font-weight: 600;
+  background: var(--gold-soft); border-radius: 8px; padding: 1px 7px;
+}
+.chat-history-panel {
+  display: none; flex-direction: column; gap: 2px;
+  max-height: 180px; overflow-y: auto; padding: 6px 10px 8px;
+  border-top: 1px solid var(--border); flex-shrink: 0;
+  scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.06) transparent;
+}
+.chat-history-panel.open { display: flex; }
+.chat-history-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 8px; border-radius: 6px; cursor: pointer;
+  transition: background .15s; border: 1px solid transparent;
+}
+.chat-history-item:hover {
+  background: rgba(255,255,255,0.03); border-color: var(--border);
+}
+.chat-history-item.active {
+  background: var(--gold-soft); border-color: rgba(196,162,83,0.2);
+}
+.chi-query {
+  flex: 1; font-size: 0.75rem; color: var(--subtle); overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap;
+}
+.chi-query.active-text { color: var(--gold); }
+.chi-meta {
+  font-size: 0.65rem; color: var(--muted); white-space: nowrap; flex-shrink: 0;
+}
+
+/* Dealer name link */
+a.dealer-link {
+  color: var(--subtle); text-decoration: none; font-weight: 600;
+  transition: color .15s;
+}
+a.dealer-link:hover { color: var(--gold); text-decoration: underline; }
+
+/* ══════════════════════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════════════════════ */
+@media(max-width:1200px){
+  .results-layout { grid-template-columns: 190px 1fr 320px; }
+}
+@media(max-width:960px){
+  .results-layout { grid-template-columns: 1fr 320px; }
+  .sidebar { display: none; }
+}
+@media(max-width:768px){
+  .results-layout { grid-template-columns: 1fr; }
+  .sidebar { display: none; }
+  .chat-panel { position: static; height: 480px; }
+}
+@media(max-width:600px){
+  header { padding: 0 1rem; }
+  .results-layout { padding: 8px 0.75rem 40px; gap: 10px; margin-top: 56px; }
+}
+
+/* ══════════════════════════════════════════════════════
+   TOAST
+══════════════════════════════════════════════════════ */
+.toast-wrap {
+  position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+  z-index: 300; display: flex; flex-direction: column; align-items: center; gap: 8px;
+}
+.toast {
+  background: var(--bg3); border: 1px solid var(--border-md);
+  border-radius: 6px; padding: 9px 18px; font-size: 0.78rem;
+  color: var(--subtle); box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  animation: slideUp .3s ease; letter-spacing: 0.02em;
+}
+</style>
+</head>
+<body>
+
+<div class="bg-mesh"></div>
+
+<!-- HEADER -->
+<header>
+  <a class="logo" href="#">
+    <div class="logo-mark">DR</div>
+    <div class="logo-divider"></div>
+    <span>DealRadar</span>
+    <span class="logo-sub">Auto Intelligence</span>
+  </a>
+  <div class="header-right">
+    <div id="api-data-age" style="display:none;font-size:0.7rem;color:var(--muted);letter-spacing:0.04em"></div>
+    <div class="api-badge">
+      <div class="api-dot"></div>
+      <span id="api-remaining">Live</span>
+    </div>
+  </div>
+</header>
+
+<!-- HERO (hidden — form inputs kept for JS compatibility) -->
+<section class="hero" style="display:none">
+  <div class="hero-eyebrow">🇺🇸 Live data from US dealers nationwide</div>
+  <h1>Find the Best<br/>Car Deal in America</h1>
+  <p>AI-powered deal scoring across thousands of dealers. Search any make and model. We surface the best discounts, CPO deals, and hidden gems nationwide.</p>
+
+  <div class="search-card">
+    <div class="search-row">
+      <div class="field">
+        <label>Make</label>
+        <input id="inp-make" class="inp" list="makes-list" placeholder="e.g. BMW" autocomplete="off"/>
+        <datalist id="makes-list"></datalist>
+      </div>
+      <div class="field">
+        <label>Model</label>
+        <input id="inp-model" class="inp" placeholder="e.g. X5" autocomplete="off"/>
+      </div>
+      <div class="field">
+        <label>Year</label>
+        <input id="inp-year" class="inp" type="number" min="2015" max="2026" placeholder="Any"/>
+      </div>
+      <div class="field">
+        <label>State</label>
+        <select id="inp-state">
+          <option value="">Nationwide</option>
+          <option>AL</option><option>AK</option><option>AZ</option><option>AR</option>
+          <option>CA</option><option>CO</option><option>CT</option><option>DE</option>
+          <option>FL</option><option>GA</option><option>HI</option><option>ID</option>
+          <option>IL</option><option>IN</option><option>IA</option><option>KS</option>
+          <option>KY</option><option>LA</option><option>ME</option><option>MD</option>
+          <option>MA</option><option>MI</option><option>MN</option><option>MS</option>
+          <option>MO</option><option>MT</option><option>NE</option><option>NV</option>
+          <option>NH</option><option>NJ</option><option>NM</option><option>NY</option>
+          <option>NC</option><option>ND</option><option>OH</option><option>OK</option>
+          <option>OR</option><option>PA</option><option>RI</option><option>SC</option>
+          <option>SD</option><option>TN</option><option>TX</option><option>UT</option>
+          <option>VT</option><option>VA</option><option>WA</option><option>WV</option>
+          <option>WI</option><option>WY</option>
+        </select>
+      </div>
+      <button class="btn-search" id="btn-search" onclick="doSearch(1)">
+        <span id="btn-txt">🔍 Search</span>
+      </button>
+    </div>
+    <div class="filters-row">
+      <span style="font-family:'Cinzel',serif;font-size:.68rem;color:var(--muted);font-weight:600;white-space:nowrap;letter-spacing:.1em">CONDITION</span>
+      <div class="chip-group" id="cond-chips">
+        <div class="chip active" data-val="">All</div>
+        <div class="chip" data-val="new">New</div>
+        <div class="chip" data-val="used">Used</div>
+        <div class="chip" data-val="cpo">CPO</div>
+      </div>
+    </div>
+
+    <!-- AI Natural Language Search -->
+    <div class="ai-search-wrap">
+      <div style="font-size:.72rem;font-weight:700;color:#a78bfa;letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px">
+        ✨ Or describe what you want in plain English
+      </div>
+      <div class="ai-search-row">
+        <input class="ai-input" id="ai-input"
+               placeholder="e.g. I want a white AWD luxury SUV under $55k with no accidents in Florida…"
+               onkeydown="if(event.key==='Enter')doAiSearch()"/>
+        <button class="btn-ai-search" id="btn-ai" onclick="doAiSearch()">✨ Search</button>
+      </div>
+      <div class="ai-understanding" id="ai-understanding"></div>
+    </div>
+  </div>
+</section>
+
+<!-- APP LAYOUT (always visible) -->
+<div class="results-layout" id="results-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+
+    <!-- Condition filter (mirrors hero chips, always in sync) -->
+    <div class="sidebar-card">
+      <div class="sidebar-title">Condition</div>
+      <div class="filter-chips" id="sidebar-cond-chips">
+        <div class="filter-chip active" data-val="" onclick="setSidebarCond(this,'')">All</div>
+        <div class="filter-chip" data-val="new"  onclick="setSidebarCond(this,'new')">New</div>
+        <div class="filter-chip" data-val="used" onclick="setSidebarCond(this,'used')">Pre-Owned</div>
+        <div class="filter-chip" data-val="cpo"  onclick="setSidebarCond(this,'cpo')">CPO</div>
+      </div>
+    </div>
+
+    <div class="sidebar-card">
+      <div class="sidebar-title">Sort By</div>
+      <div class="sort-options">
+        <button class="sort-btn active" data-sort="score" onclick="setSort('score',this)">Best Deal Score</button>
+        <button class="sort-btn" data-sort="price" onclick="setSort('price',this)">Lowest Price</button>
+        <button class="sort-btn" data-sort="discount" onclick="setSort('discount',this)">Biggest Discount</button>
+        <button class="sort-btn" data-sort="newest"   onclick="setSort('newest',this)">Recently Listed</button>
+      </div>
+    </div>
+
+    <div class="sidebar-card">
+      <div class="sidebar-title">Max Price</div>
+      <input class="inp" id="max-price" type="number" placeholder="No limit" step="1000"
+             onchange="doSearch(1)"/>
+    </div>
+
+    <!-- Drivetrain -->
+    <div class="sidebar-card" id="drivetrain-card" style="display:none">
+      <div class="sidebar-title">Drivetrain</div>
+      <div class="filter-chips" id="drivetrain-chips"></div>
+    </div>
+
+    <!-- Mileage -->
+    <div class="sidebar-card" id="mileage-card" style="display:none">
+      <div class="sidebar-title">Max Mileage</div>
+      <div class="mileage-range">
+        <div class="mileage-val" id="mileage-val">Any</div>
+        <input type="range" id="mileage-slider" min="0" max="100000" step="5000" value="100000"
+               oninput="updateMileageLabel(this.value)" onchange="doSearch(1)"/>
+        <div class="mileage-range-labels">
+          <span>0 mi</span><span id="mileage-max-label">100k mi</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Year From -->
+    <div class="sidebar-card" id="year-card" style="display:none">
+      <div class="sidebar-title">Min Year</div>
+      <div class="mileage-range">
+        <div class="mileage-val" id="year-val">Any</div>
+        <input type="range" id="year-slider" min="2010" max="2025" step="1" value="2010"
+               oninput="updateYearLabel(this.value)" onchange="doSearch(1)"/>
+        <div class="mileage-range-labels">
+          <span id="year-min-label">2010</span><span id="year-max-label">2025</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Exterior Color -->
+    <div class="sidebar-card" id="color-card" style="display:none">
+      <div class="sidebar-title">Exterior Color</div>
+      <select class="color-select" id="color-select" onchange="doSearch(1)">
+        <option value="">Any Color</option>
+      </select>
+    </div>
+
+    <!-- Vehicle History -->
+    <div class="sidebar-card" id="history-card" style="display:none">
+      <div class="sidebar-title">Vehicle History</div>
+      <div class="filter-toggle" onclick="toggleFilter('no-accidents')">
+        <div class="filter-toggle-label">No Accidents <span class="filter-toggle-count" id="no-acc-count"></span></div>
+        <div class="toggle-switch" id="toggle-no-accidents"></div>
+      </div>
+      <div class="filter-toggle" onclick="toggleFilter('one-owner')">
+        <div class="filter-toggle-label">Single Owner <span class="filter-toggle-count" id="one-own-count"></span></div>
+        <div class="toggle-switch" id="toggle-one-owner"></div>
+      </div>
+    </div>
+
+    <div class="sidebar-card" id="top-states-card" style="display:none">
+      <div class="sidebar-title">Top States</div>
+      <div id="top-states-list" style="display:flex;flex-direction:column;gap:8px"></div>
+    </div>
+
+    <!-- Market Pulse (AI) -->
+    <div class="sidebar-card" id="market-pulse-card" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div class="sidebar-title" style="margin:0">Market Pulse</div>
+        <span style="font-family:'Cinzel',serif;font-size:.52rem;color:var(--gold);font-weight:600;letter-spacing:.14em;background:var(--gold-soft);border:1px solid rgba(196,162,83,0.2);border-radius:3px;padding:2px 6px">AI</span>
+      </div>
+      <div class="pulse-text" id="pulse-text">Loading insights…</div>
+      <button class="btn-pulse" id="btn-pulse" onclick="loadMarketPulse(true)">Refresh insights</button>
+    </div>
+  </aside>
+
+  <!-- MAIN RESULTS -->
+  <main class="listings-main">
+    <!-- Stats bar (shown after first search) -->
+    <div class="stats-bar" id="stats-bar" style="display:none">
+      <div class="stat-pill">
+        <div><div class="stat-label">Results</div><div class="stat-value blue" id="st-total">—</div></div>
+      </div>
+      <div class="stat-pill">
+        <div><div class="stat-label">Avg Price</div><div class="stat-value" id="st-avg">—</div></div>
+      </div>
+      <div class="stat-pill">
+        <div><div class="stat-label">Best Discount</div><div class="stat-value green" id="st-disc">—</div></div>
+      </div>
+      <div class="stat-pill">
+        <div><div class="stat-label">Price Range</div><div class="stat-value" id="st-range">—</div></div>
+      </div>
+      <div class="stat-pill" id="st-cache-pill" style="display:none">
+        <div><div class="stat-label">API Calls</div><div class="stat-value gold" id="st-cache">0</div></div>
+      </div>
+    </div>
+    <div class="results-header">
+      <span class="results-count" id="results-count-label"></span>
+      <div id="freshness-bar" style="display:none;align-items:center;gap:10px">
+        <span id="freshness-label" style="font-size:.75rem;color:var(--muted)"></span>
+        <button class="inv-refresh-btn" id="inv-refresh-btn" onclick="forceRefresh()">↻ Refresh data</button>
+      </div>
+    </div>
+    <div id="best-deal-wrap"></div>
+    <div class="results-grid" id="results-grid">
+      <!-- Initial empty state — replaced by results after chat search -->
+      <div class="state-wrap" id="initial-empty-state" style="grid-column:1/-1">
+        <div class="state-title" style="font-family:'Bodoni Moda',serif;font-size:1.5rem;font-weight:600;margin-bottom:12px;letter-spacing:0.03em">Begin with the Concierge</div>
+        <div class="state-sub">Describe the car you're looking for in the chat panel</div>
+      </div>
+    </div>
+    <div class="pagination" id="pagination"></div>
+  </main>
+
+  <!-- CHAT PANEL (right column) -->
+  <aside class="chat-panel">
+    <div class="chat-header">
+      <div class="chat-header-title">
+        Concierge
+      </div>
+      <span class="chat-header-badge">AI</span>
+    </div>
+    <div class="chat-messages" id="chat-messages">
+      <div class="chat-msg chat-msg-ai">
+        <span style="font-family:'Cormorant Garamond',serif;font-size:1rem;line-height:1.65;display:block;margin-bottom:10px">Tell me what you are looking for: make, budget, features, location. I will surface the best deals available. You can also ask general car questions.</span>
+        <div class="chat-chips">
+          <span class="chat-chip" onclick="prefillChat('CPO Porsche Cayenne under $75k, no accidents')">CPO Porsche Cayenne</span>
+          <span class="chat-chip" onclick="prefillChat('Genesis GV80 AWD under $55k in the Southeast')">Genesis GV80 · Southeast</span>
+          <span class="chat-chip" onclick="prefillChat('BMW M3 single owner under $65k low miles')">BMW M3 · Single owner</span>
+        </div>
+      </div>
+    </div>
+    <!-- Search history drawer -->
+    <div class="chat-history-toggle" id="history-toggle" onclick="toggleHistoryPanel()" style="display:none">
+      <span class="chat-history-label">Previous Searches</span>
+      <span class="chat-history-count" id="history-count">0</span>
+    </div>
+    <div class="chat-history-panel" id="history-panel"></div>
+
+    <div class="chat-footer">
+      <textarea class="chat-input" id="chat-input" rows="2"
+        placeholder="Search for a car or ask any car question…"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat();}"></textarea>
+      <button class="btn-chat-send" id="btn-chat-send" onclick="sendChat()" title="Send">↑</button>
+    </div>
+  </aside>
+
+</div>
+
+<!-- AI Analysis Modal -->
+<div class="ai-modal-overlay" id="ai-modal" onclick="if(event.target===this)closeAiModal()">
+  <div class="ai-modal">
+    <div class="ai-modal-header">
+      <div>
+        <div style="font-size:.58rem;font-weight:600;color:var(--gold);letter-spacing:.14em;text-transform:uppercase;margin-bottom:4px">AI Deal Analysis</div>
+        <div class="modal-title" id="ai-modal-title">Analyzing…</div>
+      </div>
+      <button class="modal-close" onclick="closeAiModal()">✕</button>
+    </div>
+    <div class="ai-modal-body" id="ai-modal-body">
+      <div class="ai-loading">
+        <div class="ai-spinner"></div>
+        <div>Analyzing deal vs market…</div>
+        <div style="font-size:.78rem;margin-top:6px;color:var(--muted)">Comparing price, history & negotiation leverage</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Detail Modal -->
+<div class="modal-overlay" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">Vehicle Detail</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast-wrap" id="toasts"></div>
+
+<script>
+const API = window.location.hostname === 'localhost' ? 'http://localhost:8000' : '';
+let currentPage = 1, currentSort = 'score', currentCond = '', lastResults = [];
+let currentDrivetrain = '', filterNoAccidents = false, filterOneOwner = false;
+
+// ─── Init ──────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  loadMakes();
+  updateUsage();
+  // Restore persisted search history from localStorage
+  renderHistoryPanel();
+  // Auto-resize chat textarea
+  const chatInput = document.getElementById('chat-input');
+  if(chatInput) {
+    chatInput.addEventListener('input', () => {
+      chatInput.style.height = 'auto';
+      chatInput.style.height = Math.min(chatInput.scrollHeight, 90) + 'px';
+    });
+    chatInput.focus();
+  }
+});
+
+async function loadMakes() {
+  try {
+    const r = await fetch(`${API}/api/makes`);
+    const d = await r.json();
+    const dl = document.getElementById('makes-list');
+    d.makes.forEach(m => { const o=document.createElement('option'); o.value=m; dl.appendChild(o); });
+  } catch(e) {}
+}
+
+async function updateUsage() {
+  try {
+    const r = await fetch(`${API}/api/usage`);
+    const d = await r.json();
+    const used = d.total_used, rem = d.remaining;
+    const el = document.getElementById('api-remaining');
+    if(el) el.textContent = `${rem} calls left`;
+  } catch(e) {}
+}
+
+// ─── Search ──────────────────────────────────────────────────
+async function doSearch(page = 1) {
+  const make = document.getElementById('inp-make').value.trim();
+  const model = document.getElementById('inp-model').value.trim();
+  if(!make || !model) { toast('Use the chat on the right to search →'); return; }
+
+  currentPage = page;
+  showLoading();
+
+  const params = new URLSearchParams({
+    make, model, sort_by: currentSort, page, per_page: 12
+  });
+  const year = document.getElementById('inp-year').value;
+  const state = document.getElementById('inp-state').value;
+  const maxPrice = document.getElementById('max-price').value;
+  if(year)     params.set('year', year);
+  if(state)    params.set('state', state);
+  if(maxPrice) params.set('max_price', maxPrice);
+  if(currentCond) params.set('condition', currentCond);
+  if(currentDrivetrain) params.set('drivetrain', currentDrivetrain);
+  const mileageVal = document.getElementById('mileage-slider')?.value;
+  if(mileageVal && parseInt(mileageVal) < 100000) params.set('max_mileage', mileageVal);
+  const yearSlider = document.getElementById('year-slider');
+  if(yearSlider && parseInt(yearSlider.value) > parseInt(yearSlider.min))
+    params.set('year_from', yearSlider.value);
+  const colorVal = document.getElementById('color-select')?.value;
+  if(colorVal) params.set('color', colorVal);
+  if(filterNoAccidents) params.set('no_accidents', 'true');
+  if(filterOneOwner)    params.set('one_owner', 'true');
+
+  try {
+    const r = await fetch(`${API}/api/search?${params}`);
+    if(!r.ok) throw new Error(await r.text());
+    const d = await r.json();
+    lastResults = d.results;
+    renderResults(d, make, model);
+    updateUsage();
+    updateInventoryHealth(make, model, year, state);
+    loadFilters(make, model, year, state);
+    if(!d.cached) toast(`Live data · ${d.api_calls_used} API call${d.api_calls_used!==1?'s':''} used`);
+    loadMarketPulse();
+  } catch(e) {
+    showError(e.message);
+  }
+}
+
+// ─── Inventory Health ────────────────────────────────────
+let lastMake='', lastModel='', lastYear='', lastState='';
+
+async function updateInventoryHealth(make, model, year, state) {
+  lastMake=make; lastModel=model; lastYear=year; lastState=state;
+  try {
+    const p = new URLSearchParams({make, model});
+    if(year)  p.set('year', year);
+    if(state) p.set('state', state);
+    const r = await fetch(`${API}/api/inventory/status?${p}`);
+    const d = await r.json();
+
+    // Freshness bar inline under results count
+    const ageH   = d.data_age_hours ?? 0;
+    const ageStr = ageH < 1 ? 'Just synced' : ageH < 2 ? '~1h old' : `${Math.round(ageH)}h old`;
+    const drops  = d.price_drops?.length  ?? 0;
+    const newArr = d.new_listings?.length ?? 0;
+    let extras = [];
+    if(drops  > 0) extras.push(`${drops} price drop${drops>1?'s':''}`);
+    if(newArr > 0) extras.push(`${newArr} new`);
+    const label = document.getElementById('freshness-label');
+    label.innerHTML = `<span style="color:var(--emerald)">●</span> Data ${ageStr}${extras.length ? ' · '+extras.join(' · ') : ''}`;
+    document.getElementById('freshness-bar').style.display = 'flex';
+
+    // API panel data age
+    const ageEl = document.getElementById('api-data-age');
+    ageEl.style.display = '';
+    ageEl.textContent = `Data ${ageStr}`;
+
+  } catch(e) { console.warn('Inventory health fetch failed', e); }
+}
+
+async function forceRefresh() {
+  if(!lastMake || !lastModel) return;
+  const btn = document.getElementById('inv-refresh-btn');
+  btn.disabled = true; btn.textContent = 'Syncing…';
+  toast('Syncing live data, approx. 5 API calls…', 4000);
+  try {
+    const p = new URLSearchParams({make: lastMake, model: lastModel});
+    if(lastYear)  p.set('year', lastYear);
+    if(lastState) p.set('state', lastState);
+    const r = await fetch(`${API}/api/refresh?${p}`, {method:'POST'});
+    const d = await r.json();
+    if(d.ok) {
+      toast(`Refreshed: ${d.active_now} active, ${d.newly_removed} removed. Used ${d.api_calls} calls.`);
+      doSearch(currentPage);
+    } else {
+      toast(`Refresh issue: ${d.message}`);
+    }
+  } catch(e) {
+    toast('Refresh failed: ' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = '↻ Refresh';
+    updateUsage();
+  }
+}
+
+// ─── Dynamic Filters ─────────────────────────────────────
+let filtersLoaded = '';
+async function loadFilters(make, model, year, state) {
+  const key = `${make}|${model}|${year}|${state}`;
+  if(key === filtersLoaded) return;  // already loaded for this combo
+  filtersLoaded = key;
+  try {
+    const p = new URLSearchParams({make, model});
+    if(year)  p.set('year', year);
+    if(state) p.set('state', state);
+    const r = await fetch(`${API}/api/filters?${p}`);
+    const d = await r.json();
+
+    // Drivetrain chips
+    const dtCard = document.getElementById('drivetrain-card');
+    if(d.drivetrains && d.drivetrains.length > 1) {
+      dtCard.style.display = '';
+      const dtChips = document.getElementById('drivetrain-chips');
+      dtChips.innerHTML = `<div class="filter-chip ${!currentDrivetrain?'active':''}" onclick="setDrivetrain('')">All</div>` +
+        d.drivetrains.map(dt =>
+          `<div class="filter-chip ${currentDrivetrain===dt?'active':''}" onclick="setDrivetrain('${dt}')">${dt}</div>`
+        ).join('');
+    } else { dtCard.style.display = 'none'; }
+
+    // Mileage slider
+    const miCard = document.getElementById('mileage-card');
+    if(d.mileage_max > 0) {
+      miCard.style.display = '';
+      const slider = document.getElementById('mileage-slider');
+      const maxM = Math.ceil(d.mileage_max / 5000) * 5000;
+      slider.max = maxM;
+      if(parseInt(slider.value) > maxM || parseInt(slider.value) === 100000) slider.value = maxM;
+      document.getElementById('mileage-max-label').textContent = (maxM/1000)+'k mi';
+      updateMileageLabel(slider.value);
+    } else { miCard.style.display = 'none'; }
+
+    // Year slider
+    const yrCard = document.getElementById('year-card');
+    if(d.year_min && d.year_max && d.year_max > d.year_min) {
+      yrCard.style.display = '';
+      const yrSlider = document.getElementById('year-slider');
+      yrSlider.min = d.year_min;
+      yrSlider.max = d.year_max;
+      // Only reset to min if slider hasn't been touched (still at default or out of range)
+      if(parseInt(yrSlider.value) < d.year_min || parseInt(yrSlider.value) === 2010)
+        yrSlider.value = d.year_min;
+      document.getElementById('year-min-label').textContent = d.year_min;
+      document.getElementById('year-max-label').textContent = d.year_max;
+      updateYearLabel(yrSlider.value);
+    } else { yrCard.style.display = 'none'; }
+
+    // Color dropdown
+    const colCard = document.getElementById('color-card');
+    if(d.colors && d.colors.length > 1) {
+      colCard.style.display = '';
+      const sel = document.getElementById('color-select');
+      const curVal = sel.value;
+      sel.innerHTML = '<option value="">Any Color</option>' +
+        d.colors.map(c => `<option value="${c}" ${c===curVal?'selected':''}>${c}</option>`).join('');
+    } else { colCard.style.display = 'none'; }
+
+    // History toggles
+    const histCard = document.getElementById('history-card');
+    histCard.style.display = '';
+    const noAcc = d.accident_breakdown?.['0'] ?? 0;
+    const total = Object.values(d.accident_breakdown || {}).reduce((a,b) => a+b, 0);
+    document.getElementById('no-acc-count').textContent = `(${noAcc} of ${total})`;
+    const oneOwn = d.owner_breakdown?.['1'] ?? 0;
+    document.getElementById('one-own-count').textContent = `(${oneOwn} of ${total})`;
+    document.getElementById('toggle-no-accidents').className = 'toggle-switch' + (filterNoAccidents ? ' on' : '');
+    document.getElementById('toggle-one-owner').className = 'toggle-switch' + (filterOneOwner ? ' on' : '');
+
+  } catch(e) { console.warn('Filter load failed', e); }
+}
+
+// Returns true if a search context is active (make+model filled in)
+function hasSearchContext() {
+  const make  = document.getElementById('inp-make')?.value.trim();
+  const model = document.getElementById('inp-model')?.value.trim();
+  return !!(make && model);
+}
+
+// Sidebar condition chip — keeps hero chips in sync
+function setSidebarCond(el, val) {
+  currentCond = val;
+  // Sync sidebar chips
+  document.querySelectorAll('#sidebar-cond-chips .filter-chip').forEach(c =>
+    c.classList.toggle('active', c.dataset.val === val));
+  // Sync hero chips
+  document.querySelectorAll('#cond-chips .chip').forEach(c =>
+    c.classList.toggle('active', c.dataset.val === val));
+  if(hasSearchContext()) doSearch(1);
+}
+
+function setDrivetrain(dt) {
+  currentDrivetrain = dt;
+  document.querySelectorAll('#drivetrain-chips .filter-chip').forEach(c => {
+    c.classList.toggle('active', (dt === '' && c.textContent === 'All') || c.textContent === dt);
+  });
+  doSearch(1);
+}
+
+function updateMileageLabel(val) {
+  const v = parseInt(val);
+  const slider = document.getElementById('mileage-slider');
+  const maxV = parseInt(slider.max);
+  document.getElementById('mileage-val').textContent = v >= maxV ? 'Any' : v.toLocaleString() + ' mi';
+}
+
+function updateYearLabel(val) {
+  const v = parseInt(val);
+  const slider = document.getElementById('year-slider');
+  const minV = parseInt(slider.min);
+  document.getElementById('year-val').textContent = v <= minV ? 'Any' : v + ' +';
+}
+
+function toggleFilter(name) {
+  if(name === 'no-accidents') {
+    filterNoAccidents = !filterNoAccidents;
+    document.getElementById('toggle-no-accidents').className = 'toggle-switch' + (filterNoAccidents ? ' on' : '');
+  } else if(name === 'one-owner') {
+    filterOneOwner = !filterOneOwner;
+    document.getElementById('toggle-one-owner').className = 'toggle-switch' + (filterOneOwner ? ' on' : '');
+  }
+  doSearch(1);
+}
+
+function setSort(sort, btn) {
+  currentSort = sort;
+  document.querySelectorAll('.sort-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if(hasSearchContext()) doSearch(currentPage);
+}
+
+// ─── Render ──────────────────────────────────────────────────
+function renderResults(data, make, model) {
+  const { results, total, page, pages } = data;
+  const stats = data.stats || {};
+
+  // Show stats bar
+  document.getElementById('stats-bar').style.display = 'flex';
+  // Hide initial empty state
+  const emptyState = document.getElementById('initial-empty-state');
+  if(emptyState) emptyState.style.display = 'none';
+
+  // Stats bar
+  document.getElementById('st-total').textContent = total.toLocaleString();
+  document.getElementById('st-avg').textContent = stats.avg_price ? '$'+stats.avg_price.toLocaleString() : '—';
+  document.getElementById('st-disc').textContent = stats.best_discount ? stats.best_discount.toFixed(1)+'% off' : '—';
+  if(stats.min_price && stats.max_price)
+    document.getElementById('st-range').textContent = '$'+stats.min_price.toLocaleString()+' – $'+stats.max_price.toLocaleString();
+
+  const cachePill = document.getElementById('st-cache-pill');
+  cachePill.style.display = 'flex';
+  document.getElementById('st-cache').textContent = data.cached ? '0 (cached ✓)' : data.api_calls_used + ' (fresh)';
+  document.getElementById('st-cache').style.color = data.cached ? 'var(--emerald)' : 'var(--gold)';
+
+  // Top states
+  if(stats.top_states && stats.top_states.length) {
+    const stCard = document.getElementById('top-states-card');
+    stCard.style.display = 'block';
+    const stList = document.getElementById('top-states-list');
+    stList.innerHTML = stats.top_states.map(([st,cnt]) => `
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-family:'Cinzel',serif;font-weight:600;color:var(--text);font-size:.68rem;letter-spacing:.08em;width:24px">${st}</span>
+        <div style="flex:1;height:4px;background:rgba(255,255,255,.06);border-radius:2px">
+          <div style="height:100%;border-radius:2px;background:linear-gradient(90deg,var(--blue),var(--cyan));width:${cnt/stats.top_states[0][1]*100}%"></div>
+        </div>
+        <span style="font-family:'Cormorant Garamond',serif;font-size:.82rem;font-weight:600;color:var(--muted)">${cnt}</span>
+      </div>
+    `).join('');
+  }
+
+  // Results count
+  const start = (page-1)*12+1, end = Math.min(page*12, total);
+  document.getElementById('results-count-label').innerHTML =
+    `Showing <strong>${start}–${end}</strong> of <strong>${total.toLocaleString()}</strong> results for <strong>${make} ${model}</strong>`;
+
+  // Best deal banner (page 1 only)
+  const bdWrap = document.getElementById('best-deal-wrap');
+  if(page === 1 && results.length > 0) {
+    const b = results[0];
+    const savings = b.discount_amount ? '$'+Math.round(b.discount_amount).toLocaleString() : '';
+    bdWrap.innerHTML = `
+      <div class="best-deal-banner">
+        <div>
+          <div class="bdb-eyebrow">Top Pick</div>
+          <div class="bdb-title">${b.year||''} ${b.make||''} ${b.model||''} ${b.trim||''}</div>
+          <div class="bdb-sub">${b.dealer_name||'Unknown Dealer'} &middot; ${b.dealer_city||''}, ${b.dealer_state||''}</div>
+        </div>
+        <div class="bdb-price">
+          <div class="bdb-price-val">${b.listing_price ? '$'+b.listing_price.toLocaleString() : 'N/A'}</div>
+          <div class="bdb-savings">${savings ? savings+' below MSRP' : ''} ${b.discount_pct ? '· '+b.discount_pct+'% off' : ''}</div>
+        </div>
+      </div>`;
+  } else { bdWrap.innerHTML=''; }
+
+  // Cards
+  const grid = document.getElementById('results-grid');
+  if(!results.length) {
+    grid.innerHTML = `<div class="state-wrap"><div class="state-emoji">🔍</div><div class="state-title">No results found</div><div class="state-sub">Try widening your filters or a different year</div></div>`;
+  } else {
+    grid.innerHTML = results.map((r,i) => dealCard(r, i)).join('');
+  }
+
+  // Pagination
+  renderPagination(page, pages);
+}
+
+function dealCard(r, idx) {
+  const score = r.score || 0;
+  const pct   = Math.round(score * 100);
+  const circ  = 2 * Math.PI * 17; // r=17
+  const offset = circ * (1 - score);
+  const ringColor = score >= 0.85 ? 'var(--emerald)' : score >= 0.65 ? 'var(--blue)' : 'var(--gold)';
+
+  const now = Date.now() / 1000;
+  const isNew48h = r.first_seen_at && (now - r.first_seen_at) < 48 * 3600;
+  const isPriceDrop = r.prev_listing_price && r.listing_price < r.prev_listing_price;
+
+  const badges = [];
+  if(r.is_cpo) badges.push('<span class="badge badge-cpo">CPO</span>');
+  else if(!r.is_used) badges.push('<span class="badge badge-new">New</span>');
+  else badges.push('<span class="badge badge-used">Used</span>');
+  if(r.discount_pct >= 15) badges.push('<span class="badge badge-hot">Hot Deal</span>');
+  else if(r.discount_pct >= 10) badges.push('<span class="badge badge-deal">Deal</span>');
+  if(isNew48h)    badges.push('<span class="badge badge-fresh">Just Listed</span>');
+  if(isPriceDrop) {
+    const drop = Math.round(r.prev_listing_price - r.listing_price);
+    badges.push(`<span class="badge badge-pricedrop">-$${drop.toLocaleString()}</span>`);
+  }
+
+  const img = r.primary_image
+    ? `<img class="card-img" src="${r.primary_image}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" alt=""/><div class="card-img-placeholder" style="display:none;font-size:1.5rem;color:var(--muted)">—</div>`
+    : `<div class="card-img-placeholder" style="font-size:1.5rem;color:var(--muted)">—</div>`;
+
+  const savingsText = r.discount_amount ? `↓ $${Math.round(r.discount_amount).toLocaleString()} off MSRP` : '';
+  const priceDropText = isPriceDrop ? ` • was $${Math.round(r.prev_listing_price).toLocaleString()}` : '';
+  const savings = savingsText ? `<div class="card-savings">${savingsText}${priceDropText}</div>` : '';
+  const metas = [];
+  if(r.mileage) metas.push(`<span class="meta-tag">${r.mileage.toLocaleString()} mi</span>`);
+  if(r.drivetrain) metas.push(`<span class="meta-tag">${r.drivetrain}</span>`);
+  if(r.exterior_color) metas.push(`<span class="meta-tag">${r.exterior_color}</span>`);
+  if(r.accidents !== undefined && r.accidents === 0) metas.push(`<span class="meta-tag" style="color:var(--emerald);border-color:rgba(74,144,112,0.2)">No accidents</span>`);
+  if(r.one_owner) metas.push(`<span class="meta-tag" style="color:var(--emerald);border-color:rgba(74,144,112,0.2)">Single owner</span>`);
+
+  const carfaxBtn = r.carfax_url
+    ? `<a class="btn-carfax" href="${r.carfax_url}" target="_blank" onclick="event.stopPropagation()">Carfax</a>`
+    : '';
+  const isDirectDealer = r.listing_url && !r.listing_url.includes('auto.dev');
+  const dealerBtn = isDirectDealer
+    ? `<a class="btn-carfax" href="${r.listing_url}" target="_blank"
+         onclick="event.stopPropagation()"
+         title="View full listing on dealer website">Dealer</a>`
+    : r.listing_url
+      ? `<a class="btn-carfax" href="${r.listing_url}" target="_blank"
+           onclick="event.stopPropagation()"
+           title="View photos &amp; details">Photos</a>`
+      : '';
+  const vinSearchBtn = r.vin
+    ? `<a class="btn-carfax" href="https://www.google.com/search?q=${r.vin}" target="_blank"
+         onclick="event.stopPropagation()"
+         title="Search VIN: find on dealer site, CarGurus, AutoTrader">VIN Search</a>`
+    : '';
+  const aiBtn = `<button class="btn-detail" onclick="event.stopPropagation();openAiAnalysis('${r.vin}', ${idx})">AI Analysis</button>`;
+
+  return `
+  <div class="deal-card" onclick="openModal(${idx})" style="animation-delay:${idx*0.04}s">
+    <div class="card-img-wrap">
+      ${img}
+      <div class="card-badges">${badges.join('')}</div>
+      <div class="card-score-ring">
+        <svg viewBox="0 0 42 42" width="42" height="42">
+          <circle class="ring-bg" cx="21" cy="21" r="17"/>
+          <circle class="ring-fg" cx="21" cy="21" r="17"
+            stroke="${ringColor}"
+            stroke-dasharray="${circ}"
+            stroke-dashoffset="${offset}"/>
+        </svg>
+        <div class="ring-text">${pct}</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div>
+        <div class="card-title">${r.year||''} ${r.make||''} ${r.model||''}</div>
+        <div class="card-trim">${r.trim||''}</div>
+      </div>
+      <div class="card-price-row">
+        <div class="card-price">${r.listing_price ? '$'+r.listing_price.toLocaleString() : 'N/A'}</div>
+        ${r.base_msrp ? `<div class="card-msrp">MSRP $${r.base_msrp.toLocaleString()}</div>` : ''}
+      </div>
+      ${savings}
+      <div class="card-meta">${metas.join('')}</div>
+      <div class="card-dealer">
+        <svg width="10" height="12" viewBox="0 0 10 12" fill="none" style="flex-shrink:0;opacity:0.4;margin-top:2px"><path d="M5 0C2.24 0 0 2.24 0 5c0 3.75 5 7 5 7s5-3.25 5-7c0-2.76-2.24-5-5-5zm0 6.5A1.5 1.5 0 1 1 5 3.5a1.5 1.5 0 0 1 0 3z" fill="currentColor"/></svg>
+        <div>
+          <div class="dealer-name">
+            ${(isDirectDealer && r.listing_url)
+              ? `<a class="dealer-link" href="${r.listing_url}" target="_blank" onclick="event.stopPropagation()">${r.dealer_name||'Unknown Dealer'}</a>`
+              : r.vin
+                ? `<a class="dealer-link" href="https://www.google.com/search?q=${encodeURIComponent((r.dealer_name||''))}+${r.dealer_city||''}+${r.dealer_state||''}+dealership" target="_blank" onclick="event.stopPropagation()">${r.dealer_name||'Unknown Dealer'}</a>`
+                : (r.dealer_name||'Unknown Dealer')
+            }
+          </div>
+          <div style="font-size:.72rem;color:var(--muted)">${r.dealer_city||''}, ${r.dealer_state||''}</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-actions">
+      ${dealerBtn}
+      ${vinSearchBtn}
+      ${carfaxBtn}
+      ${aiBtn}
+      <button class="btn-detail" onclick="event.stopPropagation();openModal(${idx})">📄 Details</button>
+    </div>
+  </div>`;
+}
+
+// ─── Modal ──────────────────────────────────────────────────
+function openModal(idx) {
+  const r = lastResults[idx];
+  if(!r) return;
+  document.getElementById('modal-title').textContent = `${r.year||''} ${r.make||''} ${r.model||''} ${r.trim||''}`;
+
+  const fields = [
+    ['VIN', r.vin],
+    ['Listed Price', r.listing_price ? '$'+r.listing_price.toLocaleString() : '—'],
+    ['Base MSRP', r.base_msrp ? '$'+r.base_msrp.toLocaleString() : '—'],
+    ['Discount', r.discount_pct ? r.discount_pct+'% off' : '—'],
+    ['Savings', r.discount_amount ? '$'+Math.round(r.discount_amount).toLocaleString() : '—'],
+    ['Condition', r.is_cpo ? 'CPO Certified' : r.is_used ? 'Pre-Owned' : 'New'],
+    ['Mileage', r.mileage ? r.mileage.toLocaleString()+' miles' : '0 miles'],
+    ['Engine', r.engine||'—'],
+    ['Drivetrain', r.drivetrain||'—'],
+    ['Transmission', r.transmission||'—'],
+    ['Fuel', r.fuel||'—'],
+    ['Ext. Color', r.exterior_color||'—'],
+    ['Int. Color', r.interior_color||'—'],
+    ['Cylinders', r.cylinders||'—'],
+    ['Dealer', r.dealer_name||'—'],
+    ['Location', `${r.dealer_city||''}, ${r.dealer_state||''} ${r.dealer_zip||''}`],
+    ['Accidents', r.accidents != null ? r.accidents+' reported' : '—'],
+    ['Owners', r.one_owner ? '1 owner' : r.usage_type||'—'],
+    ['Deal Score', ((r.score||0)*100).toFixed(0)+'/100'],
+    ['Discount Score', ((r.discount_score||0)*100).toFixed(0)+'/100'],
+    ['Prev. Price', r.prev_listing_price && r.listing_price < r.prev_listing_price ? `$${Math.round(r.prev_listing_price).toLocaleString()} (reduced)` : '—'],
+    ['First Seen', r.first_seen_at ? new Date(r.first_seen_at*1000).toLocaleDateString() : '—'],
+    ['Last Seen', r.last_seen_at  ? new Date(r.last_seen_at*1000).toLocaleDateString()  : '—'],
+    ['Status', r.status === 'active' ? 'Active' : 'Removed'],
+    ['Listing', r.listing_url ? `<a href="${r.listing_url}" target="_blank" style="color:var(--gold);text-decoration:none;font-weight:600">${r.listing_url.includes('auto.dev') ? 'Photos on auto.dev →' : 'View at dealer →'}</a>` : '—'],
+  ];
+
+  const carfaxLink = r.carfax_url
+    ? `<a href="${r.carfax_url}" target="_blank" style="display:block;padding:9px 14px;background:rgba(74,144,112,.08);border:1px solid rgba(74,144,112,.18);border-radius:6px;color:var(--emerald);font-weight:500;font-size:.8rem;text-decoration:none;text-align:center;letter-spacing:.03em">View Full Carfax Report</a>`
+    : '';
+  const isModalDirectDealer = r.listing_url && !r.listing_url.includes('auto.dev');
+  const dealerLink = r.listing_url
+    ? `<a href="${r.listing_url}" target="_blank" style="display:block;padding:9px 14px;background:var(--gold-soft);border:1px solid rgba(196,162,83,.2);border-radius:6px;color:var(--gold);font-weight:500;font-size:.8rem;text-decoration:none;text-align:center;letter-spacing:.03em">${isModalDirectDealer ? 'View Full Listing at Dealer Website' : 'View Photos on auto.dev'}</a>`
+    : '';
+  const vinSearchLink = r.vin
+    ? `<a href="https://www.google.com/search?q=${r.vin}" target="_blank" style="display:block;padding:9px 14px;background:rgba(74,122,181,.06);border:1px solid rgba(74,122,181,.15);border-radius:6px;color:var(--blue2);font-weight:500;font-size:.8rem;text-decoration:none;text-align:center;letter-spacing:.03em">Search VIN: Find Dealer, CarGurus &amp; AutoTrader</a>`
+    : '';
+  const ctaLinks = (dealerLink || carfaxLink || vinSearchLink)
+    ? `<div style="display:flex;flex-direction:column;gap:8px;margin-top:4px">${dealerLink}${vinSearchLink}${carfaxLink}</div>`
+    : '';
+
+  document.getElementById('modal-body').innerHTML = `
+    ${r.primary_image ? `<img src="${r.primary_image}" style="width:100%;height:200px;object-fit:cover;border-radius:12px" onerror="this.style.display='none'"/>` : ''}
+    <div class="detail-grid">${fields.map(([l,v])=>`<div class="detail-item"><div class="detail-label">${l}</div><div class="detail-value">${v}</div></div>`).join('')}</div>
+    ${ctaLinks}`;
+
+  document.getElementById('modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', e => { if(e.key==='Escape') { closeModal(); closeAiModal(); } });
+
+// ─── Pagination ──────────────────────────────────────────────
+function renderPagination(page, pages) {
+  const pg = document.getElementById('pagination');
+  if(pages <= 1) { pg.innerHTML=''; return; }
+  let html = `<button class="page-btn" ${page<=1?'disabled':''} onclick="doSearch(${page-1})">← Prev</button>`;
+  for(let i=1;i<=pages;i++) {
+    if(i===1||i===pages||Math.abs(i-page)<=1)
+      html += `<button class="page-btn ${i===page?'active':''}" onclick="doSearch(${i})">${i}</button>`;
+    else if(Math.abs(i-page)===2)
+      html += `<span style="color:var(--muted);padding:0 4px">…</span>`;
+  }
+  html += `<button class="page-btn" ${page>=pages?'disabled':''} onclick="doSearch(${page+1})">Next →</button>`;
+  pg.innerHTML = html;
+}
+
+// ─── Loading / Error ──────────────────────────────────────────
+function showLoading() {
+  document.getElementById('results-layout').style.display = 'grid';
+  document.getElementById('best-deal-wrap').innerHTML = '';
+  const grid = document.getElementById('results-grid');
+  grid.innerHTML = Array(6).fill(0).map(()=>`
+    <div class="deal-card skeleton">
+      <div class="skel-img"></div>
+      <div class="skel-body">
+        <div class="skel-line"></div>
+        <div class="skel-line w60"></div>
+        <div class="skel-line w40"></div>
+      </div>
+    </div>`).join('');
+  document.getElementById('pagination').innerHTML = '';
+  document.getElementById('btn-search').disabled = true;
+  document.getElementById('btn-txt').textContent = 'Searching…';
+  setTimeout(()=>{
+    document.getElementById('btn-search').disabled = false;
+    document.getElementById('btn-txt').textContent = '🔍 Search';
+  }, 8000);
+}
+
+function showError(msg) {
+  document.getElementById('btn-search').disabled = false;
+  document.getElementById('btn-txt').textContent = '🔍 Search';
+  const grid = document.getElementById('results-grid');
+  grid.innerHTML = `<div class="state-wrap"><div class="state-emoji">⚠️</div><div class="state-title">Error</div><div class="state-sub">${msg}</div></div>`;
+  toast('Could not reach the server. Is it running on port 8000?');
+}
+
+// ════════════════════════════════════════════════════════
+// CHAT PANEL FUNCTIONS
+// ════════════════════════════════════════════════════════
+
+let chatThinkingEl = null;
+
+function prefillChat(text) {
+  const inp = document.getElementById('chat-input');
+  inp.value = text;
+  inp.focus();
+  inp.dispatchEvent(new Event('input'));
+}
+
+function appendChatMsg(role, html, isHtml = false) {
+  const msgs = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = `chat-msg chat-msg-${role}`;
+  if(isHtml) div.innerHTML = html;
+  else div.textContent = html;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+  return div;
+}
+
+function showChatThinking() {
+  const msgs = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = 'chat-thinking';
+  div.id = 'chat-thinking';
+  div.innerHTML = `<div class="thinking-dots"><span></span><span></span><span></span></div><span>Searching inventory…</span>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+  chatThinkingEl = div;
+}
+
+function hideChatThinking() {
+  if(chatThinkingEl) { chatThinkingEl.remove(); chatThinkingEl = null; }
+  const old = document.getElementById('chat-thinking');
+  if(old) old.remove();
+}
+
+function appendToolCalls(toolCalls) {
+  const msgs = document.getElementById('chat-messages');
+  toolCalls.forEach(tc => {
+    const div = document.createElement('div');
+    div.className = 'chat-tool-call';
+    const fmtJson = obj => JSON.stringify(obj, null, 2);
+    div.innerHTML = `
+      <div class="tool-call-header" onclick="this.parentElement.classList.toggle('open')">
+        <span>${tc.icon || '🔧'} ${tc.label}</span>
+        <span class="tool-tag">${tc.model}</span>
+        <span class="tool-toggle">▼</span>
+      </div>
+      <div class="tool-call-body">
+        <div class="tool-io-label">Input</div>
+        <pre class="tool-json">${fmtJson(tc.input)}</pre>
+        <div class="tool-io-label">Output</div>
+        <pre class="tool-json">${fmtJson(tc.output)}</pre>
+      </div>`;
+    msgs.appendChild(div);
+  });
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+// ─── Chat History ────────────────────────────────────────
+// Each entry: { id, query, intent, results, total, stats, ts }
+// Persisted in localStorage — survives page refresh.
+const HISTORY_KEY = 'dealradar_history_v1';
+
+function _loadHistory() {
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+}
+
+function _persistHistory() {
+  try {
+    // Cap per-entry results to stay within the 5 MB localStorage limit
+    const slim = chatHistory.map(e => ({ ...e, results: (e.results || []).slice(0, 20) }));
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(slim));
+  } catch {
+    // Quota exceeded — trim aggressively and retry once
+    try {
+      const trimmed = chatHistory.slice(0, 8).map(e => ({ ...e, results: (e.results||[]).slice(0, 8) }));
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(trimmed));
+    } catch { /* silently ignore */ }
+  }
+}
+
+let chatHistory = _loadHistory();
+let activeHistoryId = chatHistory.length > 0 ? chatHistory[0].id : null;
+
+function saveHistory(query, intent, results, total, stats) {
+  // Replace existing entry for same make+model rather than duplicating
+  const dupIdx = chatHistory.findIndex(e =>
+    e.intent?.make === intent?.make && e.intent?.model === intent?.model
+  );
+  if(dupIdx !== -1) chatHistory.splice(dupIdx, 1);
+
+  const entry = {
+    id: Date.now(),
+    query,
+    intent: { ...intent },
+    results: [...results],
+    total,
+    stats: { ...stats },
+    ts: new Date().toISOString()   // ISO string survives JSON serialisation
+  };
+  chatHistory.unshift(entry);
+  if(chatHistory.length > 20) chatHistory.length = 20;
+  activeHistoryId = entry.id;
+  _persistHistory();
+  renderHistoryPanel();
+  return entry.id;
+}
+
+function renderHistoryPanel() {
+  const panel  = document.getElementById('history-panel');
+  const toggle = document.getElementById('history-toggle');
+  const count  = document.getElementById('history-count');
+  if(!panel || !toggle) return;
+
+  if(chatHistory.length === 0) {
+    toggle.style.display = 'none';
+    return;
+  }
+  toggle.style.display = 'flex';
+  count.textContent = chatHistory.length;
+
+  panel.innerHTML = chatHistory.map(e => {
+    const isActive = e.id === activeHistoryId;
+    const ts = new Date(e.ts);   // handles both Date objects and ISO strings
+    const today = !isNaN(ts) && new Date().toDateString() === ts.toDateString();
+    const timeStr = isNaN(ts) ? '' : ts.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    const dateStr = isNaN(ts) ? '' : ts.toLocaleDateString([], {month:'short', day:'numeric'});
+    const label = e.intent?.make
+      ? `${e.intent.make} ${e.intent.model||''}`.trim()
+      : e.query.slice(0, 38) + (e.query.length > 38 ? '…' : '');
+    return `
+      <div class="chat-history-item ${isActive ? 'active' : ''}" onclick="restoreHistory(${e.id})">
+        <div class="chi-query ${isActive ? 'active-text' : ''}" title="${e.query.replace(/"/g,'&quot;')}">${label}</div>
+        <div class="chi-meta">${e.total > 0 ? e.total+' results' : 'No results'} · ${today ? timeStr : dateStr}</div>
+      </div>`;
+  }).join('');
+}
+
+function toggleHistoryPanel() {
+  const panel = document.getElementById('history-panel');
+  if(panel) panel.classList.toggle('open');
+}
+
+function restoreHistory(id) {
+  const entry = chatHistory.find(e => e.id === id);
+  if(!entry) return;
+  activeHistoryId = id;
+
+  // Restore form fields
+  document.getElementById('inp-make').value  = entry.intent.make  || '';
+  document.getElementById('inp-model').value = entry.intent.model || '';
+  document.getElementById('inp-year').value  = entry.intent.year  || '';
+  document.getElementById('inp-state').value = entry.intent.state || '';
+  if(entry.intent.max_price) document.getElementById('max-price').value = entry.intent.max_price;
+  if(entry.intent.condition) {
+    currentCond = entry.intent.condition;
+    document.querySelectorAll('#sidebar-cond-chips .filter-chip').forEach(c =>
+      c.classList.toggle('active', c.dataset.val === entry.intent.condition));
+  }
+
+  // Restore results
+  lastResults = entry.results;
+  renderResults({
+    results: entry.results,
+    total: entry.total,
+    page: 1,
+    pages: Math.ceil((entry.total||1)/12),
+    cached: true,
+    api_calls_used: 0,
+    stats: entry.stats
+  }, entry.intent.make||'', entry.intent.model||'');
+
+  renderHistoryPanel();
+  loadFilters(entry.intent.make||'', entry.intent.model||'', entry.intent.year||'', entry.intent.state||'');
+  toast(`Restored: ${entry.intent.make||''} ${entry.intent.model||''}`);
+}
+
+// ─── Send Chat ────────────────────────────────────────────
+async function sendChat() {
+  const inp = document.getElementById('chat-input');
+  const query = inp.value.trim();
+  if(!query) return;
+
+  const btn = document.getElementById('btn-chat-send');
+  btn.disabled = true;
+  inp.value = '';
+  inp.style.height = 'auto';
+
+  appendChatMsg('user', query);
+  showChatThinking();
+
+  try {
+    // Pass current listing context so QA answers can reference visible cars
+    const ctxParams = lastMake
+      ? `&context_make=${encodeURIComponent(lastMake)}&context_model=${encodeURIComponent(lastModel||'')}`
+      : '';
+    const r = await fetch(`${API}/api/chat?query=${encodeURIComponent(query)}${ctxParams}`, { method: 'POST' });
+    if(!r.ok) throw new Error(await r.text());
+    const d = await r.json();
+
+    hideChatThinking();
+
+    // ── QA mode: concierge answered a general car question ────
+    if(d.is_qa) {
+      const formatted = (d.answer || '').replace(/\n\n/g, '<br/><br/>').replace(/\n/g, '<br/>');
+      appendChatMsg('ai', `<span style="font-family:'Cormorant Garamond',serif;font-size:.95rem;line-height:1.65">${formatted}</span>`, true);
+      return;
+    }
+
+    if(d.error) {
+      appendChatMsg('ai', `Error: ${d.error}`, false);
+      return;
+    }
+
+    // Show tool calls (collapsible)
+    if(d.tool_calls && d.tool_calls.length) {
+      appendToolCalls(d.tool_calls);
+    }
+
+    const intent = d.intent || {};
+
+    // Update hidden form fields for filter interactions
+    document.getElementById('inp-make').value  = intent.make  || '';
+    document.getElementById('inp-model').value = intent.model || '';
+    document.getElementById('inp-year').value  = intent.year  || '';
+    document.getElementById('inp-state').value = intent.state || '';
+    if(intent.max_price) document.getElementById('max-price').value = intent.max_price;
+    if(intent.condition) {
+      currentCond = intent.condition;
+      document.querySelectorAll('#sidebar-cond-chips .filter-chip').forEach(c =>
+        c.classList.toggle('active', c.dataset.val === intent.condition));
+    }
+    if(intent.drivetrain) currentDrivetrain = intent.drivetrain;
+    if(intent.no_accidents) filterNoAccidents = true;
+    if(intent.one_owner)    filterOneOwner    = true;
+
+    // Render listings
+    lastResults = d.results || [];
+    const renderData = {
+      results: lastResults, total: d.total || lastResults.length,
+      page: 1, pages: Math.ceil((d.total||1)/12),
+      cached: d.api_calls === 0, api_calls_used: d.api_calls || 0,
+      stats: d.stats || {}
+    };
+    renderResults(renderData, intent.make||'', intent.model||'');
+    updateUsage();
+
+    // Save to history
+    saveHistory(query, intent, lastResults, d.total || lastResults.length, d.stats || {});
+
+    if(lastResults.length > 0) {
+      updateInventoryHealth(intent.make||'', intent.model||'', intent.year||'', intent.state||'');
+      loadFilters(intent.make||'', intent.model||'', intent.year||'', intent.state||'');
+      loadMarketPulse();
+    }
+
+    // AI response bubble
+    const total = d.total || 0;
+    const alts = d.suggested_alternatives || [];
+    const summary = intent.summary || '';
+    let aiMsg = `<strong>${intent.make||''} ${intent.model||''}</strong>: `;
+    aiMsg += total > 0
+      ? `found <strong>${total}</strong> listing${total!==1?'s':''}`
+      : `no listings found in cache yet`;
+    if(d.stats?.avg_price) aiMsg += `, avg <strong>$${d.stats.avg_price.toLocaleString()}</strong>`;
+    if(summary) aiMsg += `<br/><span style="font-size:.78rem;color:var(--muted);margin-top:3px;display:block">${summary}</span>`;
+    if(d.api_calls > 0) aiMsg += `<span style="font-size:.7rem;color:var(--subtle);display:block;margin-top:4px;letter-spacing:0.02em">Fetched live &middot; ${d.api_calls} API call${d.api_calls!==1?'s':''}</span>`;
+
+    if(alts.length > 0) {
+      aiMsg += `<div style="font-family:'Cinzel',serif;font-size:.6rem;color:var(--muted);margin-top:8px;margin-bottom:4px;letter-spacing:0.1em;text-transform:uppercase">Also consider:</div>`;
+      aiMsg += `<div class="chat-chips">`;
+      aiMsg += alts.map(a =>
+        `<span class="chat-chip" onclick="sendChatFor('${a.make}','${a.model}')" title="${(a.reason||'').replace(/'/g,"&#39;")}">${a.make} ${a.model}</span>`
+      ).join('');
+      aiMsg += `</div>`;
+    }
+
+    appendChatMsg('ai', aiMsg, true);
+
+  } catch(e) {
+    hideChatThinking();
+    appendChatMsg('ai', `Error: ${e.message}`);
+  } finally {
+    btn.disabled = false;
+    inp.focus();
+  }
+}
+
+// When user clicks an "Also try" chip in the chat
+async function sendChatFor(make, model) {
+  const inp = document.getElementById('chat-input');
+  inp.value = '';
+  document.getElementById('inp-make').value = make;
+  document.getElementById('inp-model').value = model;
+  appendChatMsg('user', `Show me ${make} ${model}`);
+  showChatThinking();
+  const btn = document.getElementById('btn-chat-send');
+  btn.disabled = true;
+  try {
+    await doSearch(1);
+  } finally {
+    hideChatThinking();
+    btn.disabled = false;
+  }
+}
+
+// Legacy — kept for filter chip compatibility (delegates to chat panel approach)
+async function doAiSearch() { document.getElementById('chat-input')?.focus(); }
+async function doAiSearchFor(make, model) { await sendChatFor(make, model); }
+
+// ─── AI Deal Analysis (Agent 2) ───────────────────────────────
+async function openAiAnalysis(vin, idx) {
+  const r = lastResults[idx];
+  const title = r ? `${r.year||''} ${r.make||''} ${r.model||''} ${r.trim||''}`.trim() : vin;
+
+  const modal = document.getElementById('ai-modal');
+  document.getElementById('ai-modal-title').textContent = title;
+  document.getElementById('ai-modal-body').innerHTML = `
+    <div class="ai-loading">
+      <div class="ai-spinner"></div>
+      <div>Analyzing deal vs market…</div>
+      <div style="font-size:.78rem;margin-top:6px;color:var(--muted)">Comparing price, history & negotiation leverage</div>
+    </div>`;
+  modal.classList.add('open');
+  document.body.style.overflow = 'hidden';
+
+  try {
+    const res = await fetch(`${API}/api/analyze/${vin}`);
+    if(!res.ok) throw new Error(await res.text());
+    const d = await res.json();
+    const a = d.analysis || {};
+
+    const recClass = {
+      'Strong Buy': 'rec-strong-buy',
+      'Buy':        'rec-buy',
+      'Negotiate':  'rec-negotiate',
+      'Wait':       'rec-wait',
+      'Pass':       'rec-pass',
+    }[a.recommendation] || 'rec-negotiate';
+
+    const greenHtml = (a.green_flags||[]).map(f =>
+      `<li style="margin-bottom:6px;padding-left:8px;border-left:2px solid var(--emerald)">${f}</li>`).join('');
+    const redHtml = (a.red_flags||[]).map(f =>
+      `<li style="margin-bottom:6px;padding-left:8px;border-left:2px solid var(--rose)">${f}</li>`).join('');
+    const tipsHtml = (a.negotiation_tips||[]).map((t,i) =>
+      `<div style="display:flex;gap:10px;margin-bottom:8px">
+         <span style="min-width:20px;height:20px;border-radius:3px;background:var(--gold-soft);border:1px solid rgba(196,162,83,.2);color:var(--gold);font-weight:600;font-size:.68rem;display:flex;align-items:center;justify-content:center;flex-shrink:0">${i+1}</span>
+         <span style="font-size:.84rem;color:var(--subtle);line-height:1.5">${t}</span>
+       </div>`).join('');
+
+    const cachedNote = d.cached
+      ? `<div style="font-family:'Cinzel',serif;text-align:right;font-size:.56rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase">Cached</div>`
+      : '';
+
+    document.getElementById('ai-modal-body').innerHTML = `
+      ${cachedNote}
+      <div style="display:flex;align-items:center;gap:12px">
+        <span class="rec-badge ${recClass}" style="padding:5px 14px;border-radius:4px;font-weight:600;font-size:.85rem;letter-spacing:.04em">${a.recommendation||'—'}</span>
+        <span style="font-size:.95rem;font-weight:500;color:var(--text);font-family:'Cormorant Garamond',serif">${a.headline||''}</span>
+      </div>
+
+      <div style="background:rgba(255,255,255,.025);border:1px solid var(--border);border-radius:8px;padding:14px">
+        <div style="font-family:'Cinzel',serif;font-size:.55rem;font-weight:600;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px">Price Assessment</div>
+        <p style="font-size:.86rem;color:var(--subtle);line-height:1.6">${a.price_assessment||''}</p>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div style="background:rgba(74,144,112,.04);border:1px solid rgba(74,144,112,.12);border-radius:8px;padding:14px">
+          <div style="font-family:'Cinzel',serif;font-size:.55rem;font-weight:600;color:var(--emerald);letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px">Strengths</div>
+          <ul style="list-style:none;padding:0;font-size:.81rem;color:var(--subtle);line-height:1.5">${greenHtml||'<li style="color:var(--muted)">None noted</li>'}</ul>
+        </div>
+        <div style="background:rgba(160,80,96,.04);border:1px solid rgba(160,80,96,.12);border-radius:8px;padding:14px">
+          <div style="font-family:'Cinzel',serif;font-size:.55rem;font-weight:600;color:var(--rose);letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px">Concerns</div>
+          <ul style="list-style:none;padding:0;font-size:.81rem;color:var(--subtle);line-height:1.5">${redHtml||'<li style="color:var(--muted)">None noted</li>'}</ul>
+        </div>
+      </div>
+
+      ${tipsHtml ? `
+      <div style="background:var(--gold-soft);border:1px solid rgba(196,162,83,.15);border-radius:8px;padding:14px">
+        <div style="font-family:'Cinzel',serif;font-size:.55rem;font-weight:600;color:var(--gold);letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px">Negotiation Tactics</div>
+        ${tipsHtml}
+      </div>` : ''}
+
+      <div style="background:rgba(74,122,181,.06);border:1px solid rgba(74,122,181,.15);border-radius:8px;padding:14px;margin-bottom:8px">
+        <div style="font-family:'Cinzel',serif;font-size:.55rem;font-weight:600;color:var(--blue2);letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px">Bottom Line</div>
+        <p style="font-size:.9rem;color:var(--text);font-weight:400;line-height:1.65;font-family:'Cormorant Garamond',serif">${a.bottom_line || '<span style="color:var(--muted)">See price assessment and negotiation tips above for full guidance.</span>'}</p>
+      </div>`;
+
+  } catch(e) {
+    document.getElementById('ai-modal-body').innerHTML = `
+      <div style="text-align:center;padding:40px;color:var(--rose)">
+        <div style="font-size:1.2rem;font-weight:600;margin-bottom:8px">Analysis unavailable</div>
+        <div style="font-size:.82rem;color:var(--muted)">${e.message}</div>
+        <div style="font-size:.75rem;margin-top:12px;color:var(--muted)">Ensure ANTHROPIC_API_KEY is set in data_pipeline/.env</div>
+      </div>`;
+  }
+}
+
+function closeAiModal() {
+  document.getElementById('ai-modal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// ─── Market Pulse (Agent 3) ───────────────────────────────────
+let pulseMake = '', pulseModel = '', pulseYear = '', pulseLoaded = false;
+
+async function loadMarketPulse(force = false) {
+  const make  = lastMake  || document.getElementById('inp-make').value.trim();
+  const model = lastModel || document.getElementById('inp-model').value.trim();
+  const year  = lastYear  || document.getElementById('inp-year').value;
+  const state = lastState || document.getElementById('inp-state').value;
+  if(!make || !model) return;
+
+  const sameContext = make===pulseMake && model===pulseModel && year===pulseYear;
+  if(!force && pulseLoaded && sameContext) return;
+
+  pulseMake = make; pulseModel = model; pulseYear = year;
+
+  const card = document.getElementById('market-pulse-card');
+  const text = document.getElementById('pulse-text');
+  const btn  = document.getElementById('btn-pulse');
+  card.style.display = '';
+  text.innerHTML = '<span style="color:var(--muted);font-size:.82rem">Generating insights…</span>';
+  btn.disabled = true;
+
+  try {
+    const p = new URLSearchParams({ make, model });
+    if(year)  p.set('year', year);
+    if(state) p.set('state', state);
+    const r = await fetch(`${API}/api/market-intel?${p}`);
+    if(!r.ok) throw new Error(await r.text());
+    const d = await r.json();
+
+    // Render structured insight cards
+    const ins = d.insights || {};
+
+    // Market score badge colours
+    const scoreMap = {
+      'Strong Buyer': { bg:'rgba(34,197,94,0.12)',  border:'rgba(34,197,94,0.3)',   text:'#4ade80', dot:'#22c55e' },
+      'Buyer':        { bg:'rgba(34,197,94,0.08)',  border:'rgba(34,197,94,0.2)',   text:'#86efac', dot:'#4ade80' },
+      'Neutral':      { bg:'rgba(156,163,175,0.1)', border:'rgba(156,163,175,0.2)', text:'#9ca3af', dot:'#9ca3af' },
+      'Seller':       { bg:'rgba(251,191,36,0.1)',  border:'rgba(251,191,36,0.2)',  text:'#fbbf24', dot:'#f59e0b' },
+      'Strong Seller':{ bg:'rgba(239,68,68,0.1)',   border:'rgba(239,68,68,0.2)',   text:'#f87171', dot:'#ef4444' },
+    };
+    const score = ins.market_score || 'Neutral';
+    const sc    = scoreMap[score] || scoreMap['Neutral'];
+
+    const insightRows = [
+      { label:'Supply',   text: ins.supply,   accent:'rgba(96,165,250,0.7)'  },
+      { label:'Pricing',  text: ins.pricing,  accent:'rgba(167,139,250,0.7)' },
+      { label:'Momentum', text: ins.momentum, accent:'rgba(52,211,153,0.7)'  },
+    ].filter(r => r.text);
+
+    const verdictHtml = ins.verdict ? `
+      <div style="margin-top:10px;padding:10px 12px;background:var(--gold-soft);border:1px solid rgba(196,162,83,0.25);border-radius:6px">
+        <div style="font-family:'Cinzel',serif;font-size:.52rem;letter-spacing:.12em;color:var(--gold);font-weight:600;margin-bottom:5px;text-transform:uppercase">Verdict</div>
+        <div style="font-size:.82rem;color:#e8d9b5;line-height:1.55">${ins.verdict}</div>
+      </div>` : '';
+
+    // Fallback: old plain-text format
+    const fallbackHtml = d.pulse
+      ? (d.pulse||'').split('\n').filter(l=>l.trim()).map(l=>
+          `<div style="margin-bottom:10px;font-size:.85rem;color:var(--subtle);line-height:1.5">${l.trim()}</div>`
+        ).join('')
+      : '<span style="color:var(--muted);font-size:.82rem">No data available.</span>';
+
+    text.innerHTML = ins.supply ? `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+        <div style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;background:${sc.bg};border:1px solid ${sc.border}">
+          <span style="width:6px;height:6px;border-radius:50%;background:${sc.dot};display:inline-block;flex-shrink:0"></span>
+          <span style="font-family:'Cinzel',serif;font-size:.58rem;font-weight:600;letter-spacing:.1em;color:${sc.text};text-transform:uppercase">${score} Market</span>
+        </div>
+      </div>
+      ${insightRows.map(r => `
+        <div style="margin-bottom:7px;padding:9px 12px;background:rgba(255,255,255,0.028);border:1px solid rgba(255,255,255,0.05);border-left:2px solid ${r.accent};border-radius:4px">
+          <div style="font-family:'Cinzel',serif;font-size:.52rem;letter-spacing:.12em;color:var(--muted);font-weight:600;margin-bottom:4px;text-transform:uppercase">${r.label}</div>
+          <div style="font-size:.81rem;color:var(--subtle);line-height:1.55">${r.text}</div>
+        </div>`).join('')}
+      ${verdictHtml}
+    ` : fallbackHtml;
+
+    pulseLoaded = true;
+
+  } catch(e) {
+    text.innerHTML = `<span style="color:var(--rose);font-size:.8rem">⚠ ${e.message}</span>`;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ─── Toast ──────────────────────────────────────────────────
+function toast(msg, duration=3500) {
+  const wrap = document.getElementById('toasts');
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  wrap.appendChild(t);
+  setTimeout(()=>{ t.style.opacity='0'; t.style.transition='opacity .4s'; setTimeout(()=>t.remove(),400); }, duration);
+}
+</script>
+</body>
+</html>
