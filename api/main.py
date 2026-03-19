@@ -38,9 +38,14 @@ Start:
     uvicorn main:app --reload --port 8000
 """
 
-import os, json, math, sqlite3, time, logging
+import os, sys, json, math, sqlite3, time, logging
 from pathlib import Path
 from typing import Optional, List
+
+# Ensure the api/ directory is on sys.path so `import ai_engine` works
+# regardless of whether uvicorn is invoked from the project root or api/
+sys.path.insert(0, str(Path(__file__).parent))
+
 import requests
 from dotenv import load_dotenv
 from fastapi import FastAPI, Query, HTTPException
