@@ -364,9 +364,12 @@ select option { background: #1e293b; color: var(--text); }
 .badge-deal     { background: rgba(196,162,83,0.75);  color: #0a0b10; border: 1px solid rgba(196,162,83,0.4); }
 .badge-fresh    { background: rgba(79,148,168,0.75);  color: #b8e0eb; border: 1px solid rgba(79,148,168,0.4); animation: pulse-cyan 2.5s infinite; }
 .badge-pricedrop{ background: rgba(74,144,112,0.75);  color: #c0edd8; border: 1px solid rgba(74,144,112,0.4); animation: pulse-green 2.5s infinite; }
+.badge-salvage  { background: rgba(220,38,38,0.85);   color: #fef2f2; border: 1px solid rgba(220,38,38,0.5); animation: pulse-red 1.8s infinite; }
+.badge-rebuilt  { background: rgba(234,88,12,0.85);   color: #fff7ed; border: 1px solid rgba(234,88,12,0.5); }
 
 @keyframes pulse-cyan  { 0%,100%{box-shadow:0 0 0 0 rgba(6,182,212,0.5)} 50%{box-shadow:0 0 0 5px rgba(6,182,212,0)} }
 @keyframes pulse-green { 0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,0.5)} 50%{box-shadow:0 0 0 5px rgba(16,185,129,0)} }
+@keyframes pulse-red   { 0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,0.6)}  50%{box-shadow:0 0 0 6px rgba(220,38,38,0)} }
 
 .card-score-ring {
   position: absolute; top: 10px; right: 10px;
@@ -1733,12 +1736,23 @@ function dealCard(r, idx) {
   const isNew48h = r.first_seen_at && (now - r.first_seen_at) < 48 * 3600;
   const isPriceDrop = r.prev_listing_price && r.listing_price < r.prev_listing_price;
 
+  const titleBrand = (r.title_brand || 'Clean').toLowerCase();
+  const isSalvage  = titleBrand === 'salvage';
+  const isRebuilt  = titleBrand === 'rebuilt';
+  const isBranded  = isSalvage || isRebuilt || titleBrand === 'lemon' || titleBrand === 'flood';
+
   const badges = [];
+  // Title brand warnings always go first — most critical info
+  if(isSalvage)  badges.push('<span class="badge badge-salvage">⚠ Salvage Title</span>');
+  else if(isRebuilt) badges.push('<span class="badge badge-rebuilt">Rebuilt Title</span>');
+  else if(titleBrand === 'lemon') badges.push('<span class="badge badge-salvage">⚠ Lemon Law</span>');
+  else if(titleBrand === 'flood') badges.push('<span class="badge badge-salvage">⚠ Flood</span>');
+
   if(r.is_cpo) badges.push('<span class="badge badge-cpo">CPO</span>');
   else if(!r.is_used) badges.push('<span class="badge badge-new">New</span>');
   else badges.push('<span class="badge badge-used">Used</span>');
-  if(r.discount_pct >= 15) badges.push('<span class="badge badge-hot">Hot Deal</span>');
-  else if(r.discount_pct >= 10) badges.push('<span class="badge badge-deal">Deal</span>');
+  if(!isBranded && r.discount_pct >= 15) badges.push('<span class="badge badge-hot">Hot Deal</span>');
+  else if(!isBranded && r.discount_pct >= 10) badges.push('<span class="badge badge-deal">Deal</span>');
   if(isNew48h)    badges.push('<span class="badge badge-fresh">Just Listed</span>');
   if(isPriceDrop) {
     const drop = Math.round(r.prev_listing_price - r.listing_price);

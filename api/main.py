@@ -198,8 +198,12 @@ def get_db() -> sqlite3.Connection:
         );
     """)
     conn.commit()
-    # Add AI columns if they don't exist (migration-safe)
-    for col in [("ai_analysis", "TEXT"), ("ai_analyzed_at", "REAL")]:
+    # Add columns if they don't exist (migration-safe)
+    for col in [
+        ("ai_analysis",  "TEXT"),
+        ("ai_analyzed_at", "REAL"),
+        ("title_brand",  "TEXT"),   # salvage / rebuilt / lemon / clean / unknown
+    ]:
         try:
             conn.execute(f"ALTER TABLE inventory ADD COLUMN {col[0]} {col[1]}")
             conn.commit()
@@ -250,6 +254,22 @@ def normalize(raw: dict) -> dict:
     accidents  = hist.get("accidentCount", 0) if hist else 0
     one_owner  = hist.get("oneOwner", False) if hist else False
 
+    # Title brand: check history for salvage/rebuilt/lemon flags
+    # auto.dev returns titleBrand or branded title info in history
+    _title_raw = (hist.get("titleBrand") or hist.get("titleStatus") or "").lower() if hist else ""
+    _acc_list  = hist.get("accidents") or []  # list of accident dicts
+    _salvage_keywords = ("salvage", "rebuilt", "lemon", "flood", "junk", "insurance loss")
+    if any(kw in _title_raw for kw in _salvage_keywords):
+        title_brand = _title_raw.capitalize()
+    elif any(kw in str(a).lower() for a in _acc_list for kw in ("salvage", "total loss", "rebuilt")):
+        title_brand = "Salvage"
+    elif _title_raw in ("clean", "clear"):
+        title_brand = "Clean"
+    elif accidents and accidents > 0:
+        title_brand = "Unknown"   # has accidents but no title info
+    else:
+        title_brand = "Clean"
+
     # Determine new/used reliably:
     # auto.dev often omits `used:false` for dealer-new stock, so use mileage as ground truth.
     # <= 500 miles = effectively new regardless of what the API says.
@@ -267,7 +287,11 @@ def normalize(raw: dict) -> dict:
 
     history_score = 1.0 if (not is_used or (accidents == 0 and one_owner)) else (0.75 if accidents == 0 else 0.4)
     cpo_score  = 1.0 if rl.get("cpo") else 0.5
+    # Salvage/rebuilt title is a hard penalty — no matter how cheap, it's risky
+    _is_branded = title_brand.lower() in ("salvage", "rebuilt", "lemon", "flood")
+    title_penalty = 0.45 if _is_branded else 1.0   # slash score nearly in half
     score      = round(discount_score * 0.40 + history_score * 0.25 + 1.0 * 0.20 + cpo_score * 0.15, 4)
+    score      = round(score * title_penalty, 4)
 
     return {
         "vin":            raw.get("vin"),
@@ -308,6 +332,7 @@ def normalize(raw: dict) -> dict:
         "accidents":      accidents,
         "one_owner":      one_owner,
         "usage_type":     hist.get("usageType") if hist else None,
+        "title_brand":    title_brand,
         "src_created_at": raw.get("createdAt"),
         "score":          score,
         "discount_score": round(discount_score, 4),
@@ -422,7 +447,7 @@ def delta_sync(key: str, fresh: List[dict], pages_used: int):
                     prev_listing_price, listing_url, mileage, is_used, is_cpo, is_online,
                     primary_image, carfax_url,
                     dealer_name, dealer_city, dealer_state, dealer_zip, dealer_lat, dealer_lng,
-                    accidents, one_owner, usage_type,
+                    accidents, one_owner, usage_type, title_brand,
                     score, discount_score, history_score, cpo_score,
                     first_seen_at, last_seen_at, last_verified_at, src_created_at
                 ) VALUES (
@@ -433,7 +458,7 @@ def delta_sync(key: str, fresh: List[dict], pages_used: int):
                     NULL,?,?,?,?,?,
                     ?,?,
                     ?,?,?,?,?,?,
-                    ?,?,?,
+                    ?,?,?,?,
                     ?,?,?,?,
                     ?,?,?,?
                 )
@@ -445,7 +470,7 @@ def delta_sync(key: str, fresh: List[dict], pages_used: int):
                 r["listing_url"], r["mileage"], 1 if r["is_used"] else 0, 1 if r["is_cpo"] else 0, 1 if r["is_online"] else 0,
                 r["primary_image"], r["carfax_url"],
                 r["dealer_name"], r["dealer_city"], r["dealer_state"], r["dealer_zip"], r["dealer_lat"], r["dealer_lng"],
-                r["accidents"], 1 if r.get("one_owner") else 0, r["usage_type"],
+                r["accidents"], 1 if r.get("one_owner") else 0, r["usage_type"], r.get("title_brand", "Clean"),
                 r["score"], r["discount_score"], r["history_score"], r["cpo_score"],
                 now, now, now, r["src_created_at"]
             ))
