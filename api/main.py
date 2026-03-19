@@ -828,33 +828,47 @@ async def ai_chat(
     try:
         from ai_engine import extract_search_intent, answer_car_question
     except Exception as e:
+        log.error(f"AI engine import failed: {e}")
         raise HTTPException(503, f"AI engine unavailable: {e}")
 
-    intent = extract_search_intent(query)
+    try:
+        intent = extract_search_intent(query)
+    except Exception as e:
+        log.error(f"Intent extraction failed: {e}")
+        return {"error": str(e), "intent": {}, "results": [], "total": 0}
+
     if not intent.get("make") or not intent.get("model"):
         # QA mode — answer as an automotive concierge
         listings_context = None
         if context_make and context_model:
-            key = search_key(context_make, context_model, None, None)
-            conn = get_db()
-            top = conn.execute("""
-                SELECT year, make, model, trim, listing_price, mileage, dealer_state, score,
-                       discount_pct, is_used, is_cpo, accidents
-                FROM inventory WHERE search_key=? AND status='active' AND listing_price > 0
-                ORDER BY score DESC LIMIT 6
-            """, (key,)).fetchall()
-            conn.close()
-            if top:
-                rows = [
-                    f"{r['year']} {r['make']} {r['model']}{' '+r['trim'] if r['trim'] else ''} "
-                    f"${r['listing_price']:,.0f} ({r['mileage']:,} mi, {r['dealer_state']}, "
-                    f"{'CPO' if r['is_cpo'] else 'New' if not r['is_used'] else 'Used'}"
-                    f"{', '+str(r['accidents'])+' accident(s)' if r['accidents'] else ', clean'})"
-                    for r in top
-                ]
-                listings_context = f"User is currently viewing {context_make} {context_model} listings. Top results by deal score:\n" + "\n".join(rows)
+            try:
+                key = search_key(context_make, context_model, None, None)
+                conn = get_db()
+                top = conn.execute("""
+                    SELECT year, make, model, trim, listing_price, mileage, dealer_state, score,
+                           discount_pct, is_used, is_cpo, accidents
+                    FROM inventory WHERE search_key=? AND status='active' AND listing_price > 0
+                    ORDER BY score DESC LIMIT 6
+                """, (key,)).fetchall()
+                conn.close()
+                if top:
+                    rows = [
+                        f"{r['year']} {r['make']} {r['model']}{' '+r['trim'] if r['trim'] else ''} "
+                        f"${r['listing_price']:,.0f} ({r['mileage']:,} mi, {r['dealer_state']}, "
+                        f"{'CPO' if r['is_cpo'] else 'New' if not r['is_used'] else 'Used'}"
+                        f"{', '+str(r['accidents'])+' accident(s)' if r['accidents'] else ', clean'})"
+                        for r in top
+                    ]
+                    listings_context = f"User is currently viewing {context_make} {context_model} listings. Top results by deal score:\n" + "\n".join(rows)
+            except Exception as e:
+                log.warning(f"Could not build listings context: {e}")
 
-        answer = answer_car_question(query, listings_context)
+        try:
+            answer = answer_car_question(query, listings_context)
+        except Exception as e:
+            log.error(f"Concierge QA failed: {e}")
+            answer = "I wasn't able to answer that right now. Please try again."
+
         return {
             "is_qa":   True,
             "answer":  answer,
@@ -1006,7 +1020,11 @@ async def analyze_listing(vin: str):
     conn.close()
 
     log.info(f"Running AI deal analysis for VIN {vin}")
-    analysis = analyze_deal(listing, market_stats, similar)
+    try:
+        analysis = analyze_deal(listing, market_stats, similar)
+    except Exception as e:
+        log.error(f"analyze_deal failed for VIN {vin}: {e}")
+        raise HTTPException(500, f"Deal analysis failed: {e}")
 
     # Cache analysis result
     conn2 = get_db()
@@ -1077,7 +1095,12 @@ async def market_intelligence(
         "price_drop_count":price_drops,
     }
 
-    pulse = generate_market_pulse(stats, make, model, year)
+    try:
+        pulse = generate_market_pulse(stats, make, model, year)
+    except Exception as e:
+        log.error(f"generate_market_pulse failed: {e}")
+        return {"pulse": f"Market analysis unavailable: {e}", "stats": stats}
+
     # pulse is now a structured dict (supply, pricing, momentum, verdict, market_score)
     if isinstance(pulse, dict):
         return {"insights": pulse, "stats": stats}
