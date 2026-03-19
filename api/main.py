@@ -53,17 +53,21 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
 
-load_dotenv(Path(__file__).parent.parent / "data_pipeline" / ".env")
+load_dotenv(Path(__file__).parent.parent / "data_pipeline" / ".env", override=False)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger(__name__)
 
-AUTO_DEV_API_KEY  = os.getenv("AUTO_DEV_API_KEY", "")
+AUTO_DEV_API_KEY  = (os.getenv("AUTO_DEV_API_KEY") or "").strip()
 AUTO_DEV_BASE     = "https://api.auto.dev"
-# DB_PATH: use env var on cloud (e.g. /data/inventory.db on Railway volume),
-# fall back to ~/.car-deal-finder/inventory.db locally
+# DB_PATH: use env var on cloud, fall back to ~/.car-deal-finder/inventory.db locally
 _db_env = os.getenv("DB_PATH")
 DB_PATH = Path(_db_env) if _db_env else Path.home() / ".car-deal-finder" / "inventory.db"
 DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+
+# ── Startup env check (visible in Railway logs) ───────────────
+log.info(f"ANTHROPIC_API_KEY: {'SET ✓' if (os.getenv('ANTHROPIC_API_KEY') or '').strip() else 'MISSING ✗'}")
+log.info(f"AUTO_DEV_API_KEY:  {'SET ✓' if AUTO_DEV_API_KEY else 'MISSING ✗'}")
+log.info(f"DB_PATH: {DB_PATH}")
 CACHE_TTL_HOURS   = 24      # hours before auto-refresh
 MAX_FETCH_PAGES   = 5       # 5 pages × 100 listings = 500 per combo
 MISS_THRESHOLD    = 2       # consecutive misses before marking 'removed'
