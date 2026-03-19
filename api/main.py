@@ -78,15 +78,25 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], all
 
 @app.get("/api/health")
 async def health():
-    """Quick diagnostic — shows which env vars are present without exposing values."""
+    """Diagnostic endpoint — shows env var status and all var names present."""
     anthropic_key = (os.getenv("ANTHROPIC_API_KEY") or "").strip()
     autodev_key   = (os.getenv("AUTO_DEV_API_KEY")   or "").strip()
+
+    # List all env var NAMES (not values) so we can see what Railway injected
+    all_var_names = sorted(os.environ.keys())
+    # Flag any that look like our keys but are named differently
+    similar = [k for k in all_var_names
+               if "ANTHROPIC" in k.upper() or "AUTODEV" in k.upper()
+               or "AUTO_DEV" in k.upper() or "AUTO" in k.upper()]
+
     return {
         "status": "ok" if (anthropic_key and autodev_key) else "degraded",
         "ANTHROPIC_API_KEY": "set" if anthropic_key else "MISSING",
         "AUTO_DEV_API_KEY":  "set" if autodev_key  else "MISSING",
         "DB_PATH": str(DB_PATH),
         "db_exists": DB_PATH.exists(),
+        "all_env_var_names": all_var_names,
+        "similar_keys_found": similar,
     }
 
 
