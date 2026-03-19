@@ -76,6 +76,20 @@ app = FastAPI(title="AI Car Deal Finder", version="2.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 
+@app.get("/api/health")
+async def health():
+    """Quick diagnostic — shows which env vars are present without exposing values."""
+    anthropic_key = (os.getenv("ANTHROPIC_API_KEY") or "").strip()
+    autodev_key   = (os.getenv("AUTO_DEV_API_KEY")   or "").strip()
+    return {
+        "status": "ok" if (anthropic_key and autodev_key) else "degraded",
+        "ANTHROPIC_API_KEY": "set" if anthropic_key else "MISSING",
+        "AUTO_DEV_API_KEY":  "set" if autodev_key  else "MISSING",
+        "DB_PATH": str(DB_PATH),
+        "db_exists": DB_PATH.exists(),
+    }
+
+
 # ═══════════════════════════════════════════════════════════════
 # DATABASE — schema & helpers
 # ═══════════════════════════════════════════════════════════════
