@@ -6,7 +6,7 @@
 <title>DealRadar · Best Car Deals Across the USA</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚗</text></svg>"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;0,6..96,600;0,6..96,700;1,6..96,400&family=Cinzel:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cinzel:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
 /* ══════════════════════════════════════════════════════
    RESET & BASE
@@ -72,9 +72,9 @@ header {
 
 .logo {
   display: flex; align-items: center; gap: 12px;
-  font-family: 'Bodoni Moda', serif;
+  font-family: 'Cinzel', serif;
   font-size: 1.35rem; font-weight: 600; color: var(--text);
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   text-decoration: none;
 }
 .logo-mark {
@@ -82,7 +82,7 @@ header {
   border: 1px solid var(--gold);
   border-radius: 4px;
   display: flex; align-items: center; justify-content: center;
-  font-family: 'Bodoni Moda', serif;
+  font-family: 'Cinzel', serif;
   font-size: 0.85rem; font-weight: 700; color: var(--gold);
   letter-spacing: 0;
   flex-shrink: 0;
@@ -133,7 +133,7 @@ header {
 }
 
 .hero h1 {
-  font-family: 'Bodoni Moda', serif;
+  font-family: 'Cinzel', serif;
   font-size: clamp(1.6rem, 3.5vw, 2.4rem);
   font-weight: 700; line-height: 1.2;
   background: linear-gradient(135deg, #fff 0%, #94a3b8 50%, var(--blue2) 100%);
@@ -238,7 +238,7 @@ select option { background: #1e293b; color: var(--text); }
   display: flex; align-items: center; gap: 8px;
 }
 .stat-label { font-family: 'Cinzel', serif; font-size: 0.55rem; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; }
-.stat-value { font-size: 0.88rem; font-weight: 600; color: var(--text); font-family: 'Cormorant Garamond', serif; }
+.stat-value { font-size: 0.88rem; font-weight: 600; color: var(--text); font-family: 'Cinzel', serif; }
 .stat-value.green { color: var(--emerald); }
 .stat-value.blue  { color: var(--blue2); }
 .stat-value.gold  { color: var(--gold); }
@@ -385,9 +385,9 @@ select option { background: #1e293b; color: var(--text); }
 .card-body { padding: 16px; flex: 1; display: flex; flex-direction: column; gap: 10px; }
 
 .card-title {
-  font-family: 'Bodoni Moda', serif;
-  font-size: 1.0rem; font-weight: 600; color: var(--text);
-  line-height: 1.25; letter-spacing: 0.02em;
+  font-family: 'Cinzel', serif;
+  font-size: 0.92rem; font-weight: 600; color: var(--text);
+  line-height: 1.3; letter-spacing: 0.04em;
 }
 .card-trim { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
 
@@ -395,10 +395,10 @@ select option { background: #1e293b; color: var(--text); }
   display: flex; align-items: baseline; justify-content: space-between;
 }
 .card-price {
-  font-size: 1.35rem; font-weight: 700;
-  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.25rem; font-weight: 700;
+  font-family: 'Cinzel', serif;
   color: var(--gold);
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
 }
 .card-msrp {
   font-size: 0.8rem; color: var(--muted); text-decoration: line-through;
@@ -550,7 +550,7 @@ select option { background: #1e293b; color: var(--text); }
   padding: 8px 0; cursor: pointer; user-select: none;
 }
 .filter-toggle-label { font-family: 'Cinzel', serif; font-size: 0.7rem; letter-spacing: 0.06em; color: var(--subtle); display: flex; align-items: center; gap: 6px; }
-.filter-toggle-count { font-family: 'Cormorant Garamond', serif; font-size: 0.78rem; color: var(--muted); }
+.filter-toggle-count { font-family: 'Cinzel', serif; font-size: 0.68rem; color: var(--muted); letter-spacing: 0.04em; }
 
 .toggle-switch {
   width: 36px; height: 20px; border-radius: 10px;
@@ -581,7 +581,7 @@ select option { background: #1e293b; color: var(--text); }
   display: flex; justify-content: space-between;
   font-family: 'Cinzel', serif; font-size: 0.58rem; letter-spacing: 0.08em; color: var(--muted);
 }
-.mileage-val { font-family: 'Cormorant Garamond', serif; font-size: 1rem; font-weight: 600; color: var(--blue2); text-align: center; letter-spacing: 0.02em; }
+.mileage-val { font-family: 'Cinzel', serif; font-size: 0.82rem; font-weight: 600; color: var(--blue2); text-align: center; letter-spacing: 0.04em; }
 
 .color-select {
   font-family: 'Cinzel', serif; letter-spacing: 0.06em;
@@ -717,9 +717,9 @@ select option { background: #1e293b; color: var(--text); }
 
 /* Market Pulse sidebar card */
 .pulse-text {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 0.9rem; color: var(--subtle); line-height: 1.7;
-  white-space: pre-line;
+  font-family: 'Cinzel', serif;
+  font-size: 0.78rem; color: var(--subtle); line-height: 1.9;
+  white-space: pre-line; letter-spacing: 0.03em;
 }
 .btn-pulse {
   width: 100%; margin-top: 10px; padding: 7px;
@@ -738,7 +738,7 @@ select option { background: #1e293b; color: var(--text); }
 }
 .state-emoji { font-size: 3.5rem; margin-bottom: 16px; }
 .state-title { font-size: 1.2rem; font-weight: 700; color: var(--text); margin-bottom: 8px; }
-.state-sub   { font-family: 'Cormorant Garamond', serif; font-size: 1rem; font-style: italic; color: var(--muted); }
+.state-sub   { font-family: 'Cinzel', serif; font-size: 0.82rem; letter-spacing: 0.05em; color: var(--muted); }
 
 .skeleton { border-radius: var(--radius); overflow: hidden; }
 .skel-img  { height: 160px; background: linear-gradient(90deg, var(--bg3) 25%, var(--card) 50%, var(--bg3) 75%); background-size: 200%; animation: shimmer 1.4s infinite; }
@@ -784,7 +784,7 @@ select option { background: #1e293b; color: var(--text); }
   display: flex; align-items: center; justify-content: space-between;
   backdrop-filter: blur(10px);
 }
-.modal-title { font-family: 'Bodoni Moda', serif; font-size: 1.1rem; font-weight: 600; letter-spacing: 0.02em; }
+.modal-title { font-family: 'Cinzel', serif; font-size: 1rem; font-weight: 600; letter-spacing: 0.06em; }
 .modal-close {
   background: rgba(255,255,255,0.06); border: none; border-radius: 8px;
   color: var(--muted); cursor: pointer; font-size: 1.1rem; padding: 6px 10px;
@@ -822,8 +822,8 @@ select option { background: #1e293b; color: var(--text); }
 .bdb-sub   { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
 .bdb-price { margin-left: auto; text-align: right; }
 .bdb-price-val {
-  font-size: 1.25rem; font-weight: 600; color: var(--gold);
-  font-family: 'Cormorant Garamond', serif; letter-spacing: 0.02em;
+  font-size: 1.1rem; font-weight: 600; color: var(--gold);
+  font-family: 'Cinzel', serif; letter-spacing: 0.04em;
 }
 .bdb-savings   { font-size: 0.72rem; color: var(--emerald); font-weight: 500; margin-top: 2px; }
 
@@ -863,16 +863,16 @@ select option { background: #1e293b; color: var(--text); }
   flex-shrink: 0;
 }
 .chat-header-title {
-  font-family: 'Bodoni Moda', serif;
-  font-weight: 600; font-size: 1rem; color: var(--text);
-  letter-spacing: 0.04em;
+  font-family: 'Cinzel', serif;
+  font-weight: 600; font-size: 0.9rem; color: var(--text);
+  letter-spacing: 0.08em;
   display: flex; align-items: center; gap: 10px;
 }
 .chat-header-badge {
   font-size: 0.55rem; font-weight: 600; color: var(--gold);
   background: var(--gold-soft); border: 1px solid rgba(196,162,83,0.25);
   border-radius: 3px; padding: 2px 7px; letter-spacing: 0.12em; text-transform: uppercase;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Cinzel', serif;
 }
 .chat-messages {
   flex: 1; overflow-y: auto; padding: 12px;
@@ -1293,7 +1293,7 @@ a.dealer-link:hover { color: var(--gold); text-decoration: underline; }
     <div class="results-grid" id="results-grid">
       <!-- Initial empty state — replaced by results after chat search -->
       <div class="state-wrap" id="initial-empty-state" style="grid-column:1/-1">
-        <div class="state-title" style="font-family:'Bodoni Moda',serif;font-size:1.5rem;font-weight:600;margin-bottom:12px;letter-spacing:0.03em">Begin with the Concierge</div>
+        <div class="state-title" style="font-family:'Cinzel',serif;font-size:1.25rem;font-weight:600;margin-bottom:12px;letter-spacing:0.1em">Begin with the Concierge</div>
         <div class="state-sub">Describe the car you're looking for in the chat panel</div>
       </div>
     </div>
@@ -1310,7 +1310,7 @@ a.dealer-link:hover { color: var(--gold); text-decoration: underline; }
     </div>
     <div class="chat-messages" id="chat-messages">
       <div class="chat-msg chat-msg-ai">
-        <span style="font-family:'Cormorant Garamond',serif;font-size:1rem;line-height:1.65;display:block;margin-bottom:10px">Tell me what you are looking for: make, budget, features, location. I will surface the best deals available. You can also ask general car questions.</span>
+        <span style="font-family:'Cinzel',serif;font-size:.78rem;line-height:1.9;letter-spacing:.03em;display:block;margin-bottom:10px">Tell me what you are looking for: make, budget, features, location. I will surface the best deals available. You can also ask general car questions.</span>
         <div class="chat-chips">
           <span class="chat-chip" onclick="prefillChat('CPO Porsche Cayenne under $75k, no accidents')">CPO Porsche Cayenne</span>
           <span class="chat-chip" onclick="prefillChat('Genesis GV80 AWD under $55k in the Southeast')">Genesis GV80 · Southeast</span>
@@ -1681,7 +1681,7 @@ function renderResults(data, make, model) {
         <div style="flex:1;height:4px;background:rgba(255,255,255,.06);border-radius:2px">
           <div style="height:100%;border-radius:2px;background:linear-gradient(90deg,var(--blue),var(--cyan));width:${cnt/stats.top_states[0][1]*100}%"></div>
         </div>
-        <span style="font-family:'Cormorant Garamond',serif;font-size:.82rem;font-weight:600;color:var(--muted)">${cnt}</span>
+        <span style="font-family:'Cinzel',serif;font-size:.7rem;font-weight:600;color:var(--muted);letter-spacing:.04em">${cnt}</span>
       </div>
     `).join('');
   }
@@ -2153,7 +2153,7 @@ async function sendChat() {
     // ── QA mode: concierge answered a general car question ────
     if(d.is_qa) {
       const formatted = (d.answer || '').replace(/\n\n/g, '<br/><br/>').replace(/\n/g, '<br/>');
-      appendChatMsg('ai', `<span style="font-family:'Cormorant Garamond',serif;font-size:.95rem;line-height:1.65">${formatted}</span>`, true);
+      appendChatMsg('ai', `<span style="font-family:'Cinzel',serif;font-size:.78rem;line-height:1.9;letter-spacing:.02em">${formatted}</span>`, true);
       return;
     }
 
@@ -2306,7 +2306,7 @@ async function openAiAnalysis(vin, idx) {
       ${cachedNote}
       <div style="display:flex;align-items:center;gap:12px">
         <span class="rec-badge ${recClass}" style="padding:5px 14px;border-radius:4px;font-weight:600;font-size:.85rem;letter-spacing:.04em">${a.recommendation||'—'}</span>
-        <span style="font-size:.95rem;font-weight:500;color:var(--text);font-family:'Cormorant Garamond',serif">${a.headline||''}</span>
+        <span style="font-size:.82rem;font-weight:500;color:var(--text);font-family:'Cinzel',serif;letter-spacing:.04em">${a.headline||''}</span>
       </div>
 
       <div style="background:rgba(255,255,255,.025);border:1px solid var(--border);border-radius:8px;padding:14px">
@@ -2333,7 +2333,7 @@ async function openAiAnalysis(vin, idx) {
 
       <div style="background:rgba(74,122,181,.06);border:1px solid rgba(74,122,181,.15);border-radius:8px;padding:14px;margin-bottom:8px">
         <div style="font-family:'Cinzel',serif;font-size:.55rem;font-weight:600;color:var(--blue2);letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px">Bottom Line</div>
-        <p style="font-size:.9rem;color:var(--text);font-weight:400;line-height:1.65;font-family:'Cormorant Garamond',serif">${a.bottom_line || '<span style="color:var(--muted)">See price assessment and negotiation tips above for full guidance.</span>'}</p>
+        <p style="font-size:.78rem;color:var(--text);font-weight:400;line-height:1.85;font-family:'Cinzel',serif;letter-spacing:.025em">${a.bottom_line || '<span style="color:var(--muted)">See price assessment and negotiation tips above for full guidance.</span>'}</p>
       </div>`;
 
   } catch(e) {
@@ -2402,29 +2402,29 @@ async function loadMarketPulse(force = false) {
     ].filter(r => r.text);
 
     const verdictHtml = ins.verdict ? `
-      <div style="margin-top:10px;padding:10px 12px;background:var(--gold-soft);border:1px solid rgba(196,162,83,0.25);border-radius:6px">
-        <div style="font-family:'Cinzel',serif;font-size:.52rem;letter-spacing:.12em;color:var(--gold);font-weight:600;margin-bottom:5px;text-transform:uppercase">Verdict</div>
-        <div style="font-size:.82rem;color:#e8d9b5;line-height:1.55">${ins.verdict}</div>
+      <div style="margin-top:12px;padding:12px 14px;background:var(--gold-soft);border:1px solid rgba(196,162,83,0.25);border-radius:6px">
+        <div style="font-family:'Cinzel',serif;font-size:.65rem;letter-spacing:.14em;color:var(--gold);font-weight:700;margin-bottom:7px;text-transform:uppercase">Verdict</div>
+        <div style="font-family:'Cinzel',serif;font-size:.73rem;color:#e8d9b5;line-height:1.7;letter-spacing:.025em">${ins.verdict}</div>
       </div>` : '';
 
     // Fallback: old plain-text format
     const fallbackHtml = d.pulse
       ? (d.pulse||'').split('\n').filter(l=>l.trim()).map(l=>
-          `<div style="margin-bottom:10px;font-size:.85rem;color:var(--subtle);line-height:1.5">${l.trim()}</div>`
+          `<div style="margin-bottom:10px;font-family:'Cinzel',serif;font-size:.75rem;color:var(--subtle);line-height:1.7;letter-spacing:.02em">${l.trim()}</div>`
         ).join('')
-      : '<span style="color:var(--muted);font-size:.82rem">No data available.</span>';
+      : '<span style="color:var(--muted);font-family:\'Cinzel\',serif;font-size:.72rem">No data available.</span>';
 
     text.innerHTML = ins.supply ? `
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
-        <div style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;background:${sc.bg};border:1px solid ${sc.border}">
-          <span style="width:6px;height:6px;border-radius:50%;background:${sc.dot};display:inline-block;flex-shrink:0"></span>
-          <span style="font-family:'Cinzel',serif;font-size:.58rem;font-weight:600;letter-spacing:.1em;color:${sc.text};text-transform:uppercase">${score} Market</span>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+        <div style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;background:${sc.bg};border:1px solid ${sc.border}">
+          <span style="width:7px;height:7px;border-radius:50%;background:${sc.dot};display:inline-block;flex-shrink:0"></span>
+          <span style="font-family:'Cinzel',serif;font-size:.68rem;font-weight:700;letter-spacing:.12em;color:${sc.text};text-transform:uppercase">${score} Market</span>
         </div>
       </div>
       ${insightRows.map(r => `
-        <div style="margin-bottom:7px;padding:9px 12px;background:rgba(255,255,255,0.028);border:1px solid rgba(255,255,255,0.05);border-left:2px solid ${r.accent};border-radius:4px">
-          <div style="font-family:'Cinzel',serif;font-size:.52rem;letter-spacing:.12em;color:var(--muted);font-weight:600;margin-bottom:4px;text-transform:uppercase">${r.label}</div>
-          <div style="font-size:.81rem;color:var(--subtle);line-height:1.55">${r.text}</div>
+        <div style="margin-bottom:9px;padding:10px 13px;background:rgba(255,255,255,0.028);border:1px solid rgba(255,255,255,0.05);border-left:3px solid ${r.accent};border-radius:5px">
+          <div style="font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.14em;color:var(--muted);font-weight:700;margin-bottom:5px;text-transform:uppercase">${r.label}</div>
+          <div style="font-family:'Cinzel',serif;font-size:.73rem;color:var(--subtle);line-height:1.7;letter-spacing:.02em">${r.text}</div>
         </div>`).join('')}
       ${verdictHtml}
     ` : fallbackHtml;

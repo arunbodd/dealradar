@@ -54,7 +54,10 @@ log = logging.getLogger(__name__)
 
 AUTO_DEV_API_KEY  = os.getenv("AUTO_DEV_API_KEY", "")
 AUTO_DEV_BASE     = "https://api.auto.dev"
-DB_PATH           = Path.home() / ".car-deal-finder" / "inventory.db"
+# DB_PATH: use env var on cloud (e.g. /data/inventory.db on Railway volume),
+# fall back to ~/.car-deal-finder/inventory.db locally
+_db_env = os.getenv("DB_PATH")
+DB_PATH = Path(_db_env) if _db_env else Path.home() / ".car-deal-finder" / "inventory.db"
 DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 CACHE_TTL_HOURS   = 24      # hours before auto-refresh
 MAX_FETCH_PAGES   = 5       # 5 pages × 100 listings = 500 per combo
