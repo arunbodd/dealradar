@@ -116,26 +116,43 @@ with st.sidebar:
     st.divider()
 
     st.markdown("### 🔑 API Keys")
-    # Load from Streamlit secrets if available
-    default_anthro = st.secrets.get("ANTHROPIC_API_KEY", "") if hasattr(st, "secrets") else ""
-    default_autodev = st.secrets.get("AUTO_DEV_API_KEY", "") if hasattr(st, "secrets") else ""
 
-    anthro_key = st.text_input(
-        "Anthropic API Key",
-        value=st.session_state.anthropic_key or default_anthro,
-        type="password",
-        placeholder="sk-ant-...",
-        help="Get yours at console.anthropic.com",
-    )
-    autodev_key = st.text_input(
-        "auto.dev API Key",
-        value=st.session_state.autodev_key or default_autodev,
-        type="password",
-        placeholder="Your auto.dev key",
-        help="Get yours at auto.dev",
-    )
-    if anthro_key:  st.session_state.anthropic_key = anthro_key
-    if autodev_key: st.session_state.autodev_key   = autodev_key
+    # Load secrets silently into session state — never expose in UI
+    _secrets = getattr(st, "secrets", {})
+    if not st.session_state.anthropic_key:
+        st.session_state.anthropic_key = _secrets.get("ANTHROPIC_API_KEY", "")
+    if not st.session_state.autodev_key:
+        st.session_state.autodev_key = _secrets.get("AUTO_DEV_API_KEY", "")
+
+    _anthro_from_secrets  = bool(_secrets.get("ANTHROPIC_API_KEY", ""))
+    _autodev_from_secrets = bool(_secrets.get("AUTO_DEV_API_KEY", ""))
+
+    # Only show input fields when keys are NOT pre-configured via secrets
+    if _anthro_from_secrets:
+        st.markdown("🔒 **Anthropic key** — configured")
+    else:
+        anthro_key = st.text_input(
+            "Anthropic API Key",
+            value="",
+            type="password",
+            placeholder="sk-ant-...",
+            help="Get yours at console.anthropic.com",
+        )
+        if anthro_key:
+            st.session_state.anthropic_key = anthro_key
+
+    if _autodev_from_secrets:
+        st.markdown("🔒 **auto.dev key** — configured")
+    else:
+        autodev_key = st.text_input(
+            "auto.dev API Key",
+            value="",
+            type="password",
+            placeholder="Your auto.dev key",
+            help="Get yours at auto.dev",
+        )
+        if autodev_key:
+            st.session_state.autodev_key = autodev_key
 
     keys_ok = bool(st.session_state.anthropic_key and st.session_state.autodev_key)
     if keys_ok:
