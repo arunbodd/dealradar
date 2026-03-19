@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # ── Secrets & API Keys ─────────────────────────────────────────────────────────
 .env
 .env.*
@@ -81,3 +82,7 @@ coverage.xml
 
 # ── Misc JSON dumps ───────────────────────────────────────────────────────────────
 *_results.json
+=======
+# Google App Engine generated folder
+appengine-generated/
+>>>>>>> 3e79ba4e0133526d75083a4b07f828a4d483ad43
