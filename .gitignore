@@ -1,6 +1,5 @@
 # ── Secrets & API Keys ─────────────────────────────────────────────────────────
 .env
-.env.*
 *.env
 data_pipeline/.env
 **/secrets.*
