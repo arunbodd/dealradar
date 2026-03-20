@@ -1,29 +1,36 @@
-# DealRadar · Best Car Deals
+# DealRadar · AI Car Deal Intelligence
 
-> **AI-powered car deal intelligence.** DealRadar surfaces the best new and pre-owned vehicle deals in real time, combining live market data with four specialized AI agents to score, rank, and explain every listing.
-
----
-
-## Overview
-
-DealRadar is a full-stack web application that lets you describe the car you want in plain English and instantly see ranked, scored listings with AI-generated deal analysis, market pulse reports, and an automotive concierge that answers any car question.
+> Describe the car you want in plain English. Get ranked listings, AI deal analysis, and negotiation tactics — in seconds.
 
 ```
 "CPO Porsche Cayenne under $75k, no accidents"
-→ 12 ranked listings, deal score per car, market pulse, full AI breakdown
+→ ranked listings · deal score per car · market pulse · full AI breakdown
 ```
+
+---
+
+## How It Works
+
+1. You type a natural language query into the chat
+2. **Agent 1** (Claude Haiku) extracts structured search params from your words
+3. Listings are fetched from auto.dev and cached in SQLite — zero repeated API calls
+4. **Agent 2** (Claude Sonnet) analyzes any listing against live market comparables and returns a buy/negotiate/pass recommendation
+5. **Agent 3** (Claude Haiku) reads inventory stats and writes a market pulse: supply, pricing trends, and a buyer/seller verdict
+6. **Agent 4** (Claude Haiku) answers any follow-up car question, grounded in your current search session
 
 ---
 
 ## Features
 
-- **Natural language search** — Describe what you want in any phrasing; the AI extracts make, model, year range, budget, and preferences.
-- **Deal scoring** — Each listing receives a 0–100 deal score based on price vs. market value, mileage, accident history, CPO status, and regional demand.
-- **AI deal analysis** — Detailed breakdown of why each car is or isn't a good deal, negotiation leverage, and what to watch out for.
-- **Market Pulse** — Supply, pricing trend, and momentum analysis for any make/model, rendered as visual insight cards with a buyer/seller market verdict.
-- **Automotive concierge** — Chat to ask general car questions (differences between trims, what to inspect at a test drive, etc.) grounded in your current search session.
-- **Persistent search history** — Previous searches survive page refreshes via localStorage, with time-stamped session history in the sidebar.
-- **Luxury typography** — Bodoni Moda, Cinzel, and Cormorant Garamond throughout for a premium feel.
+- **Natural language search** — Any phrasing; the AI extracts make, model, year, budget, drivetrain, color, mileage, accident history, and more
+- **Deal scoring** — 0–100 score per listing based on discount off MSRP, mileage, accident history, and CPO status
+- **Title brand detection** — Salvage, rebuilt, lemon, and flood titles trigger a 0.45× score penalty and a forced "Pass" recommendation
+- **AI deal analysis** — Recommendation, headline, price vs. market assessment, specific negotiation tactics, green flags, red flags, bottom line
+- **Market Pulse** — Supply, pricing, and momentum insights with a buyer/seller market verdict
+- **Automotive concierge** — Ask any car question grounded in your current listing session
+- **Smart caching** — First search costs 3–5 API calls. Repeat searches cost zero. Stale listings auto-flagged after 2 missed syncs
+- **Price drop tracking** — Detects price reductions between refreshes
+- **Persistent search history** — Previous searches survive page refreshes via localStorage
 
 ---
 
@@ -32,31 +39,31 @@ DealRadar is a full-stack web application that lets you describe the car you wan
 ```
 car-deal-finder/
 ├── api/
-│   ├── main.py          # FastAPI backend — REST endpoints, SQLite queries
-│   └── ai_engine.py     # Four AI agents (Anthropic Claude)
+│   ├── main.py            # FastAPI backend — routes, SQLite queries, delta sync
+│   └── ai_engine.py       # Four AI agents (Anthropic Claude)
 ├── frontend/
-│   └── index.html       # Single-file SPA (~2400 lines, vanilla JS)
+│   └── index.html         # Single-file SPA — vanilla JS, no build step
 ├── data_pipeline/
-│   └── pipeline.py      # Auto.dev scraper → SQLite ingestion
-│   └── .env             # ← NOT committed (API keys live here)
-├── database/            # Schema and migration files
-├── docs/                # Architecture notes
-├── streamlit_app.py     # Streamlit demo wrapper
+│   ├── pipeline.py        # Auto.dev scraper → SQLite ingestion (standalone)
+│   └── .env               # API keys — NOT committed
+├── database/
+│   └── schema.sql         # Reference schema (SQLite auto-creates tables on startup)
+├── .env.example           # Copy to data_pipeline/.env and fill in keys
+├── render.yaml            # Render.com deployment config
 ├── requirements.txt
-├── Procfile             # For Railway / Heroku deployment
-└── start.sh             # Local dev launcher
+└── start.sh               # Local dev launcher
 ```
 
-### AI Agents (ai_engine.py)
+### AI Agents
 
-| Agent | Model | Role |
+| Agent | Model | Job |
 |---|---|---|
-| Agent 1 — Intent Extractor | claude-haiku-4-5 | Parses natural language queries into structured search params |
-| Agent 2 — Deal Analyst | claude-sonnet-4-6 | Scores listings 0–100 and writes deal summaries |
-| Agent 3 — Market Pulse | claude-haiku-4-5 | Generates supply/pricing/momentum market report |
-| Agent 4 — Concierge QA | claude-haiku-4-5 | Answers general automotive questions with optional listing context |
+| 1 — Intent Extractor | claude-haiku-4-5 | Natural language → structured SQL filters |
+| 2 — Deal Analyst | claude-sonnet-4-6 | Listing + market data → buy/negotiate/pass |
+| 3 — Market Pulse | claude-haiku-4-5 | Inventory stats → supply/pricing/momentum narrative |
+| 4 — Concierge QA | claude-haiku-4-5 | Car questions answered with current listing context |
 
-All agents use `tool_choice: {"type": "any"}` for reliable structured JSON output.
+All agents use `tool_choice: {"type": "any"}` — output is always typed JSON, never free text.
 
 ---
 
@@ -65,8 +72,8 @@ All agents use `tool_choice: {"type": "any"}` for reliable structured JSON outpu
 ### Prerequisites
 
 - Python 3.10+
-- An [Anthropic API key](https://console.anthropic.com/)
-- An [Auto.dev API key](https://auto.dev/) (for live listing data)
+- [Anthropic API key](https://console.anthropic.com/)
+- [Auto.dev API key](https://auto.dev/)
 
 ### 1. Clone
 
@@ -79,13 +86,16 @@ cd dealradar
 
 ```bash
 python -m venv .venv
-source .venv/bin/activate       # Windows: .venv\Scripts\activate
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
 ### 3. Configure secrets
 
-Create `data_pipeline/.env`:
+```bash
+cp .env.example data_pipeline/.env
+# Edit data_pipeline/.env and fill in your keys
+```
 
 ```env
 AUTO_DEV_API_KEY=your_auto_dev_key_here
@@ -94,66 +104,57 @@ ANTHROPIC_API_KEY=your_anthropic_key_here
 
 > **Never commit this file.** It is excluded by `.gitignore`.
 
-### 4. Run the backend
+### 4. Run
 
 ```bash
 bash start.sh
-# or manually:
+# or directly:
 uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-### 5. Open the app
-
-Open `frontend/index.html` directly in your browser, or serve it:
-
-```bash
-cd frontend && python -m http.server 3000
-# then visit http://localhost:3000
-```
-
-The frontend expects the API at `http://localhost:8000` by default. Update the `API` constant at the top of `index.html` if you deploy elsewhere.
+Then open `http://localhost:8000` — the frontend is served by FastAPI at the root.
 
 ---
 
-## API Endpoints
+## API Reference
 
 | Method | Path | Description |
 |---|---|---|
-| `POST` | `/api/chat` | Main chat endpoint — search or QA |
+| `POST` | `/api/chat` | Natural language search or concierge QA |
+| `GET` | `/api/analyze/{vin}` | AI deal analysis for a specific VIN |
 | `GET` | `/api/market-intel` | Market pulse for a make/model |
-| `GET` | `/api/listings` | Fetch ranked listings from DB |
-| `GET` | `/api/stats` | Aggregate stats for a search key |
-| `POST` | `/api/analyze` | AI deal analysis for a single listing |
+| `GET` | `/api/search` | Direct listing search with filter params |
+| `GET` | `/api/filters` | Available filter values for a search combo |
+| `GET` | `/api/inventory/status` | Sync metadata, price drops, new listings |
+| `POST` | `/api/refresh` | Force re-sync from auto.dev |
+| `GET` | `/api/usage` | API call budget tracking |
+| `GET` | `/api/health` | Env var and provider status |
 
-### Chat endpoint
+### Examples
 
+```bash
+# Natural language search
+curl -X POST "http://localhost:8000/api/chat?query=white+AWD+BMW+X5+under+50k+no+accidents"
+
+# AI deal analysis for a VIN
+curl "http://localhost:8000/api/analyze/1GNSCCKR4JR123456"
+
+# Market pulse
+curl "http://localhost:8000/api/market-intel?make=BMW&model=X5"
 ```
-POST /api/chat?query=CPO+BMW+X5+under+65k&context_make=BMW&context_model=X5
-```
-
-If the query contains a recognized make/model, it performs a search and returns scored listings. If not, it routes to the Concierge QA agent, optionally grounded in the current listing context.
 
 ---
 
-## Deployment
+## Deployment (Render)
 
-### Railway / Heroku
+The repo includes `render.yaml` for one-click deploy on [Render.com](https://render.com).
 
-The `Procfile` is set up for Railway:
-
-```
-web: uvicorn api.main:app --host 0.0.0.0 --port $PORT
-```
-
-Set `ANTHROPIC_API_KEY` and `AUTO_DEV_API_KEY` as environment variables in your deployment dashboard — never in code.
-
-### Streamlit demo
-
-A lightweight Streamlit wrapper (`streamlit_app.py`) is included for sharing a demo where others supply their own API keys:
-
-```bash
-streamlit run streamlit_app.py
-```
+1. Connect your GitHub repo to Render
+2. Set environment variables in the Render dashboard:
+   - `ANTHROPIC_API_KEY`
+   - `AUTO_DEV_API_KEY`
+   - `DB_PATH` → `/tmp/inventory.db`
+3. Start command: `uvicorn api.main:app --host 0.0.0.0 --port $PORT`
 
 ---
 
@@ -161,25 +162,28 @@ streamlit run streamlit_app.py
 
 | Variable | Required | Description |
 |---|---|---|
-| `ANTHROPIC_API_KEY` | Yes | Claude API key from console.anthropic.com |
-| `AUTO_DEV_API_KEY` | Yes | Auto.dev marketplace API key |
+| `ANTHROPIC_API_KEY` | Yes | Claude API — [console.anthropic.com](https://console.anthropic.com) |
+| `AUTO_DEV_API_KEY` | Yes | Live inventory data — [auto.dev](https://auto.dev) |
+| `DB_PATH` | No | SQLite path (default: `~/.car-deal-finder/inventory.db`; use `/tmp/inventory.db` on cloud) |
 
 ---
 
 ## Tech Stack
 
-- **Backend**: FastAPI, SQLite, Python 3.10+
-- **AI**: Anthropic Claude (Haiku + Sonnet) via tool_use
-- **Frontend**: Vanilla JS, single HTML file, no build step
-- **Data**: Auto.dev API via `data_pipeline/pipeline.py`
-- **Fonts**: Bodoni Moda, Cinzel, Cormorant Garamond, Inter (Google Fonts)
+| Layer | Technology |
+|---|---|
+| Backend | FastAPI, Python 3.10+, SQLite |
+| AI | Anthropic Claude API — Haiku (speed) + Sonnet (analysis) |
+| Frontend | Vanilla JS, single HTML file, no build step |
+| Data | Auto.dev API with delta-sync caching |
+| Deployment | Render.com |
 
 ---
 
 ## License
 
-MIT License — see [LICENSE](LICENSE) for details.
+MIT — see [LICENSE](LICENSE) for details.
 
 ---
 
-*Built with Claude · Anthropic*
+*Built with [Claude](https://claude.ai) · [Anthropic](https://anthropic.com)*
