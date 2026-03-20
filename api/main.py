@@ -57,23 +57,9 @@ load_dotenv(Path(__file__).parent.parent / "data_pipeline" / ".env", override=Fa
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger(__name__)
 
-AUTO_DEV_API_KEY     = (os.getenv("AUTO_DEV_API_KEY")     or "").strip()
-MARKETCHECK_API_KEY  = (os.getenv("MARKETCHECK_API_KEY")  or "").strip()
-AUTO_DEV_BASE        = "https://api.auto.dev"
-MARKETCHECK_BASE     = "https://mc-api.marketcheck.com/v2"
-
-# ── Provider auto-detection ───────────────────────────────────
-# DATA_PROVIDER env var can force "autodev" or "marketcheck".
-# If not set, prefer MarketCheck when its key is available, else fall back to auto.dev.
-_provider_override = (os.getenv("DATA_PROVIDER") or "").strip().lower()
-if _provider_override in ("autodev", "marketcheck"):
-    DATA_PROVIDER = _provider_override
-elif MARKETCHECK_API_KEY:
-    DATA_PROVIDER = "marketcheck"
-elif AUTO_DEV_API_KEY:
-    DATA_PROVIDER = "autodev"
-else:
-    DATA_PROVIDER = "none"
+AUTO_DEV_API_KEY = (os.getenv("AUTO_DEV_API_KEY") or "").strip()
+AUTO_DEV_BASE    = "https://api.auto.dev"
+DATA_PROVIDER    = "autodev" if AUTO_DEV_API_KEY else "none"
 
 # DB_PATH: use env var on cloud, fall back to ~/.car-deal-finder/inventory.db locally
 _db_env = os.getenv("DB_PATH")
@@ -81,10 +67,9 @@ DB_PATH = Path(_db_env) if _db_env else Path.home() / ".car-deal-finder" / "inve
 DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 # ── Startup env check (visible in Render/Railway logs) ───────
-log.info(f"ANTHROPIC_API_KEY:   {'SET ✓' if (os.getenv('ANTHROPIC_API_KEY') or '').strip() else 'MISSING ✗'}")
-log.info(f"AUTO_DEV_API_KEY:    {'SET ✓' if AUTO_DEV_API_KEY else 'MISSING ✗'}")
-log.info(f"MARKETCHECK_API_KEY: {'SET ✓' if MARKETCHECK_API_KEY else 'MISSING ✗'}")
-log.info(f"DATA_PROVIDER:       {DATA_PROVIDER}")
+log.info(f"ANTHROPIC_API_KEY: {'SET ✓' if (os.getenv('ANTHROPIC_API_KEY') or '').strip() else 'MISSING ✗'}")
+log.info(f"AUTO_DEV_API_KEY:  {'SET ✓' if AUTO_DEV_API_KEY else 'MISSING ✗'}")
+log.info(f"DATA_PROVIDER:     {DATA_PROVIDER}")
 log.info(f"DB_PATH: {DB_PATH}")
 CACHE_TTL_HOURS   = 24      # hours before auto-refresh
 MAX_FETCH_PAGES   = 5       # 5 pages × 100 listings = 500 per combo
@@ -96,26 +81,23 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], all
 
 @app.get("/api/health")
 async def health():
-    """Diagnostic endpoint — shows env var status and active data provider."""
-    anthropic_key   = (os.getenv("ANTHROPIC_API_KEY")    or "").strip()
-    autodev_key     = (os.getenv("AUTO_DEV_API_KEY")      or "").strip()
-    marketcheck_key = (os.getenv("MARKETCHECK_API_KEY")   or "").strip()
-    data_ok         = DATA_PROVIDER in ("autodev", "marketcheck")
+    """Diagnostic endpoint — shows env var status."""
+    anthropic_key = (os.getenv("ANTHROPIC_API_KEY") or "").strip()
+    autodev_key   = (os.getenv("AUTO_DEV_API_KEY")  or "").strip()
 
     all_var_names = sorted(os.environ.keys())
     similar = [k for k in all_var_names
-               if any(x in k.upper() for x in ("ANTHROPIC", "AUTO_DEV", "AUTODEV", "MARKETCHECK", "DATA_PROVIDER"))]
+               if any(x in k.upper() for x in ("ANTHROPIC", "AUTO_DEV", "AUTODEV"))]
 
     return {
-        "status":              "ok" if (anthropic_key and data_ok) else "degraded",
-        "ANTHROPIC_API_KEY":   "set"    if anthropic_key   else "MISSING",
-        "AUTO_DEV_API_KEY":    "set"    if autodev_key     else "MISSING",
-        "MARKETCHECK_API_KEY": "set"    if marketcheck_key else "MISSING",
-        "DATA_PROVIDER":       DATA_PROVIDER,
-        "DB_PATH":             str(DB_PATH),
-        "db_exists":           DB_PATH.exists(),
-        "all_env_var_names":   all_var_names,
-        "similar_keys_found":  similar,
+        "status":            "ok" if (anthropic_key and autodev_key) else "degraded",
+        "ANTHROPIC_API_KEY": "set" if anthropic_key else "MISSING",
+        "AUTO_DEV_API_KEY":  "set" if autodev_key   else "MISSING",
+        "DATA_PROVIDER":     DATA_PROVIDER,
+        "DB_PATH":           str(DB_PATH),
+        "db_exists":         DB_PATH.exists(),
+        "all_env_var_names": all_var_names,
+        "similar_keys_found":similar,
     }
 
 
@@ -219,9 +201,9 @@ def get_db() -> sqlite3.Connection:
     conn.commit()
     # Add columns if they don't exist (migration-safe)
     for col in [
-        ("ai_analysis",  "TEXT"),
-        ("ai_analyzed_at", "REAL"),
-        ("title_brand",  "TEXT"),   # salvage / rebuilt / lemon / clean / unknown
+        ("ai_analysis",   "TEXT"),
+        ("ai_analyzed_at","REAL"),
+        ("title_brand",   "TEXT"),   # salvage / rebuilt / lemon / clean / unknown
     ]:
         try:
             conn.execute(f"ALTER TABLE inventory ADD COLUMN {col[0]} {col[1]}")
@@ -361,103 +343,15 @@ def normalize(raw: dict) -> dict:
 
 
 # ═══════════════════════════════════════════════════════════════
-# NORMALIZE — MarketCheck raw → same flat dict as normalize()
+# FETCH — auto.dev
 # ═══════════════════════════════════════════════════════════════
 
-def normalize_marketcheck(raw: dict) -> dict:
-    """Translate a MarketCheck listing object into DealRadar's standard flat dict."""
-    build   = raw.get("build") or {}
-    dealer  = raw.get("dealer") or {}
-    media   = raw.get("media") or {}
+def fetch_from_api(make: str, model: str, year: Optional[int] = None,
+                   state: Optional[str] = None) -> tuple[List[dict], int]:
+    """Fetch listings from auto.dev API. Returns (listings, pages_used)."""
+    if not AUTO_DEV_API_KEY:
+        raise RuntimeError("AUTO_DEV_API_KEY is not set.")
 
-    price       = raw.get("price") or raw.get("sale_price")
-    base_msrp   = raw.get("msrp")
-    mileage     = raw.get("miles") or 0
-    accidents   = raw.get("accident_count") or 0
-    one_owner   = bool(raw.get("carfax_1_owner") or raw.get("one_owner"))
-    is_cpo      = bool(raw.get("is_certified") or raw.get("certified"))
-
-    # Title brand from MarketCheck fields
-    _clean_title = raw.get("carfax_clean_title")
-    _title_raw   = (raw.get("title_brand") or raw.get("title_status") or "").lower()
-    _salvage_kws = ("salvage", "rebuilt", "lemon", "flood", "junk", "insurance loss")
-    if any(kw in _title_raw for kw in _salvage_kws):
-        title_brand = _title_raw.capitalize()
-    elif _clean_title is False:
-        title_brand = "Unknown"   # CARFAX says not clean but no specific brand
-    elif _clean_title is True:
-        title_brand = "Clean"
-    elif accidents > 0:
-        title_brand = "Unknown"
-    else:
-        title_brand = "Clean"
-
-    # Scoring — identical formula to normalize()
-    discount      = round((base_msrp - price) / base_msrp * 100, 1) if (base_msrp and price and base_msrp > price) else 0
-    discount_score = min(discount / 20.0, 1.0)
-    is_used        = not (mileage <= 500 or (not raw.get("used") and mileage == 0))
-    if is_cpo:
-        is_used = True
-    history_score  = 1.0 if (not is_used or (accidents == 0 and one_owner)) else (0.75 if accidents == 0 else 0.4)
-    cpo_score      = 1.0 if is_cpo else 0.5
-    _is_branded    = title_brand.lower() in ("salvage", "rebuilt", "lemon", "flood")
-    title_penalty  = 0.45 if _is_branded else 1.0
-    score          = round((discount_score * 0.40 + history_score * 0.25 + 1.0 * 0.20 + cpo_score * 0.15) * title_penalty, 4)
-
-    photos = media.get("photo_links") or []
-
-    return {
-        "vin":            raw.get("vin"),
-        "listing_url":    raw.get("vdp_url"),
-        "year":           build.get("year"),
-        "make":           build.get("make"),
-        "model":          build.get("model"),
-        "trim":           build.get("trim"),
-        "series":         build.get("trim"),
-        "body_style":     build.get("body_type"),
-        "drivetrain":     build.get("drivetrain"),
-        "engine":         build.get("engine"),
-        "transmission":   build.get("transmission"),
-        "fuel":           build.get("fuel_type"),
-        "exterior_color": build.get("exterior_color") or raw.get("exterior_color"),
-        "interior_color": build.get("interior_color") or raw.get("interior_color"),
-        "cylinders":      build.get("cylinders"),
-        "base_msrp":      base_msrp,
-        "base_invoice":   None,
-        "listing_price":  price,
-        "discount_pct":   discount,
-        "discount_amount": round(base_msrp - price, 0) if (base_msrp and price) else None,
-        "mileage":        mileage,
-        "is_used":        is_used,
-        "is_cpo":         is_cpo,
-        "is_online":      True,
-        "primary_image":  photos[0] if photos else None,
-        "carfax_url":     raw.get("carfax_url"),
-        "dealer_name":    dealer.get("name"),
-        "dealer_city":    dealer.get("city"),
-        "dealer_state":   dealer.get("state"),
-        "dealer_zip":     dealer.get("zip"),
-        "dealer_lat":     dealer.get("latitude"),
-        "dealer_lng":     dealer.get("longitude"),
-        "accidents":      accidents,
-        "one_owner":      one_owner,
-        "usage_type":     None,
-        "title_brand":    title_brand,
-        "src_created_at": raw.get("listed_at"),
-        "score":          score,
-        "discount_score": round(discount_score, 4),
-        "history_score":  round(history_score, 4),
-        "cpo_score":      round(cpo_score, 4),
-    }
-
-
-# ═══════════════════════════════════════════════════════════════
-# FETCH — provider-aware (auto.dev or MarketCheck)
-# ═══════════════════════════════════════════════════════════════
-
-def _fetch_from_autodev(make: str, model: str, year: Optional[int] = None,
-                        state: Optional[str] = None) -> tuple[List[dict], int]:
-    """Fetch from auto.dev API. Returns (listings, pages_used)."""
     session = requests.Session()
     results, pages = [], 0
 
@@ -492,64 +386,6 @@ def _fetch_from_autodev(make: str, model: str, year: Optional[int] = None,
         time.sleep(0.2)
 
     return results, pages
-
-
-def _fetch_from_marketcheck(make: str, model: str, year: Optional[int] = None,
-                             state: Optional[str] = None) -> tuple[List[dict], int]:
-    """Fetch from MarketCheck API. Returns (listings, pages_used)."""
-    session = requests.Session()
-    results, pages = [], 0
-    rows_per_page  = 100
-
-    for page in range(MAX_FETCH_PAGES):
-        params = {
-            "api_key": MARKETCHECK_API_KEY,
-            "make":    make,
-            "model":   model,
-            "rows":    rows_per_page,
-            "start":   page * rows_per_page,
-            "fields":  "id,vin,price,msrp,miles,exterior_color,interior_color,"
-                       "carfax_1_owner,carfax_clean_title,accident_count,is_certified,"
-                       "vdp_url,media,build,dealer,used,listed_at,title_brand,carfax_url",
-        }
-        if year:  params["year"]  = year
-        if state: params["state"] = state
-
-        log.info(f"  [marketcheck] pg{page+1} — {make} {model} {year or ''} {state or ''}")
-        try:
-            resp = session.get(f"{MARKETCHECK_BASE}/search/car/active", params=params, timeout=15)
-            if resp.status_code != 200:
-                log.warning(f"  [marketcheck] {resp.status_code}: {resp.text[:200]}")
-                break
-            data  = resp.json()
-            batch = data.get("listings") or []
-            pages += 1
-            if not batch:
-                break
-            results.extend(normalize_marketcheck(r) for r in batch)
-            if len(batch) < rows_per_page:
-                log.info(f"  [marketcheck] Partial page ({len(batch)}) — done")
-                break
-        except Exception as e:
-            log.error(f"  [marketcheck] Fetch error: {e}")
-            break
-        time.sleep(0.2)
-
-    return results, pages
-
-
-def fetch_from_api(make: str, model: str, year: Optional[int] = None,
-                   state: Optional[str] = None) -> tuple[List[dict], int]:
-    """Dispatcher — routes to the active DATA_PROVIDER."""
-    if DATA_PROVIDER == "marketcheck":
-        return _fetch_from_marketcheck(make, model, year, state)
-    elif DATA_PROVIDER == "autodev":
-        return _fetch_from_autodev(make, model, year, state)
-    else:
-        raise RuntimeError(
-            "No data provider configured. "
-            "Set MARKETCHECK_API_KEY or AUTO_DEV_API_KEY in your environment variables."
-        )
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -782,7 +618,7 @@ async def search(
 
     if is_stale(key):
         if DATA_PROVIDER == "none":
-            raise HTTPException(500, "No data provider configured. Set MARKETCHECK_API_KEY or AUTO_DEV_API_KEY.")
+            raise HTTPException(500, "No data provider configured. Set AUTO_DEV_API_KEY.")
         log.info(f"Cache MISS / stale — fetching from {DATA_PROVIDER}: {key}")
         fresh, pages = fetch_from_api(make, model, year, state)
         if not fresh:
@@ -929,7 +765,7 @@ async def force_refresh(
     Use sparingly — costs ~5 API calls per call.
     """
     if DATA_PROVIDER == "none":
-        raise HTTPException(500, "No data provider configured. Set MARKETCHECK_API_KEY or AUTO_DEV_API_KEY.")
+        raise HTTPException(500, "No data provider configured. Set AUTO_DEV_API_KEY.")
 
     key = search_key(make, model, year, state)
     log.info(f"Force refresh: {key}")
@@ -1114,7 +950,7 @@ async def ai_chat(
     api_calls = 0
     if is_stale(key):
         if DATA_PROVIDER == "none":
-            return {"error": "No data provider configured. Set MARKETCHECK_API_KEY or AUTO_DEV_API_KEY.", "intent": intent,
+            return {"error": "No data provider configured. Set AUTO_DEV_API_KEY.", "intent": intent,
                     "results": [], "total": 0}
         fresh, pages = fetch_from_api(make, model, year, state)
         if fresh:
