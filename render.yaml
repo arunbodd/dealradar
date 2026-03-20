@@ -7,7 +7,13 @@ services:
     envVars:
       - key: ANTHROPIC_API_KEY
         sync: false
+      - key: MARKETCHECK_API_KEY
+        sync: false
       - key: AUTO_DEV_API_KEY
+        sync: false
+      # DATA_PROVIDER: optional override — "marketcheck" or "autodev"
+      # If not set, auto-detects: prefers marketcheck if key is present, else autodev
+      - key: DATA_PROVIDER
         sync: false
       - key: DB_PATH
         value: /tmp/inventory.db
