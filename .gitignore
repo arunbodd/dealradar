@@ -79,5 +79,21 @@ coverage.xml
 .ipynb_checkpoints/
 *.ipynb
 
-# ── Misc JSON dumps ───────────────────────────────────────────────────────────────
+# ── Misc JSON dumps & test data ──────────────────────────────────────────────────
 *_results.json
+api/*.json
+
+# ── Pitch / presentation assets (binary, not source code) ────────────────────────
+*.pptx
+*.pdf
+
+# ── Node (pptxgenjs pitch script removed, no longer needed) ──────────────────────
+package.json
+package-lock.json
+
+# ── Stale deployment / framework artifacts ───────────────────────────────────────
+requirements-streamlit.txt
+Procfile
+
+# ── Internal planning docs ────────────────────────────────────────────────────────
+docs/
