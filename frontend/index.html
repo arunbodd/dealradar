@@ -1240,7 +1240,7 @@ a.dealer-link:hover { color: var(--gold); text-decoration: underline; }
     <div class="sidebar-card" id="history-card" style="display:none">
       <div class="sidebar-title">Vehicle History</div>
       <div class="filter-toggle" onclick="toggleFilter('no-accidents')">
-        <div class="filter-toggle-label">No Accidents <span class="filter-toggle-count" id="no-acc-count"></span></div>
+        <div class="filter-toggle-label">No Accidents <span class="filter-toggle-count" id="no-acc-count"></span><span style="font-size:.7rem;color:var(--muted);font-weight:400;margin-left:4px">(dealer-reported)</span></div>
         <div class="toggle-switch" id="toggle-no-accidents"></div>
       </div>
       <div class="filter-toggle" onclick="toggleFilter('one-owner')">
@@ -1770,11 +1770,13 @@ function dealCard(r, idx) {
   if(r.mileage) metas.push(`<span class="meta-tag">${r.mileage.toLocaleString()} mi</span>`);
   if(r.drivetrain) metas.push(`<span class="meta-tag">${r.drivetrain}</span>`);
   if(r.exterior_color) metas.push(`<span class="meta-tag">${r.exterior_color}</span>`);
-  if(r.accidents !== undefined && r.accidents === 0) metas.push(`<span class="meta-tag" style="color:var(--emerald);border-color:rgba(74,144,112,0.2)">No accidents</span>`);
+  if(r.accidents !== undefined && r.accidents === 0) metas.push(`<span class="meta-tag" style="color:var(--gold);border-color:rgba(196,162,83,0.25)" title="Dealer-reported only — always verify with an independent CARFAX or AutoCheck report">0 reported ⚠</span>`);
   if(r.one_owner) metas.push(`<span class="meta-tag" style="color:var(--emerald);border-color:rgba(74,144,112,0.2)">Single owner</span>`);
 
   const carfaxBtn = r.carfax_url
-    ? `<a class="btn-carfax" href="${r.carfax_url}" target="_blank" onclick="event.stopPropagation()">Carfax</a>`
+    ? `<a class="btn-carfax" href="${r.carfax_url}" target="_blank" onclick="event.stopPropagation()"
+         style="${r.accidents === 0 ? 'border-color:rgba(196,162,83,0.5);color:var(--gold)' : ''}"
+         title="${r.accidents === 0 ? 'Dealer reports 0 accidents — verify independently' : 'View CARFAX report'}">Carfax${r.accidents === 0 ? ' ⚠' : ''}</a>`
     : '';
   const isDirectDealer = r.listing_url && !r.listing_url.includes('auto.dev');
   const dealerBtn = isDirectDealer
@@ -1868,7 +1870,9 @@ function openModal(idx) {
     ['Cylinders', r.cylinders||'—'],
     ['Dealer', r.dealer_name||'—'],
     ['Location', `${r.dealer_city||''}, ${r.dealer_state||''} ${r.dealer_zip||''}`],
-    ['Accidents', r.accidents != null ? r.accidents+' reported' : '—'],
+    ['Accidents', r.accidents != null
+      ? `${r.accidents} dealer-reported <span style="color:var(--gold);font-size:.75rem" title="Dealer-reported figures may not match CARFAX or AutoCheck. Always pull an independent vehicle history report before purchasing.">⚠ verify with CARFAX</span>`
+      : '—'],
     ['Owners', r.one_owner ? '1 owner' : r.usage_type||'—'],
     ['Deal Score', ((r.score||0)*100).toFixed(0)+'/100'],
     ['Discount Score', ((r.discount_score||0)*100).toFixed(0)+'/100'],
