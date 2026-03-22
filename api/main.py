@@ -75,6 +75,48 @@ CACHE_TTL_HOURS   = 24      # hours before auto-refresh
 MAX_FETCH_PAGES   = 5       # 5 pages × 100 listings = 500 per combo
 MISS_THRESHOLD    = 2       # consecutive misses before marking 'removed'
 
+
+# ═══════════════════════════════════════════════════════════════
+# GEO HELPERS — Haversine distance + ZIP geocoding
+# ═══════════════════════════════════════════════════════════════
+
+_zip_cache: dict = {}  # in-memory zip→(lat,lng) cache (resets on server restart)
+
+def haversine_miles(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
+    """Straight-line distance between two GPS coordinates in miles."""
+    import math
+    R = 3958.8
+    phi1, phi2 = math.radians(lat1), math.radians(lat2)
+    d_phi = math.radians(lat2 - lat1)
+    d_lam = math.radians(lng2 - lng1)
+    a = math.sin(d_phi/2)**2 + math.cos(phi1)*math.cos(phi2)*math.sin(d_lam/2)**2
+    return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+
+def geocode_zip(zip_code: str) -> Optional[tuple]:
+    """
+    Return (lat, lng) for a US ZIP code via OpenStreetMap Nominatim.
+    Results are cached in-memory for the lifetime of the server process.
+    """
+    if zip_code in _zip_cache:
+        return _zip_cache[zip_code]
+    try:
+        resp = requests.get(
+            "https://nominatim.openstreetmap.org/search",
+            params={"postalcode": zip_code, "country": "US", "format": "json", "limit": 1},
+            headers={"User-Agent": "DealRadar/1.0"},
+            timeout=5,
+        )
+        data = resp.json()
+        if data:
+            coords = (float(data[0]["lat"]), float(data[0]["lon"]))
+            _zip_cache[zip_code] = coords
+            return coords
+    except Exception as e:
+        log.warning(f"Geocode failed for ZIP {zip_code}: {e}")
+    return None
+
+
 app = FastAPI(title="AI Car Deal Finder", version="2.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
@@ -213,7 +255,10 @@ def get_db() -> sqlite3.Connection:
     return conn
 
 
-def search_key(make: str, model: str, year: Optional[int], state: Optional[str]) -> str:
+def search_key(make: str, model: str, year: Optional[int], state: Optional[str],
+               zip_code: Optional[str] = None, radius_miles: Optional[int] = None) -> str:
+    if zip_code:
+        return f"{make.lower()}|{model.lower()}|{year or 'any'}|zip{zip_code}r{radius_miles or 100}"
     return f"{make.lower()}|{model.lower()}|{year or 'any'}|{state or 'us'}"
 
 
@@ -347,8 +392,11 @@ def normalize(raw: dict) -> dict:
 # ═══════════════════════════════════════════════════════════════
 
 def fetch_from_api(make: str, model: str, year: Optional[int] = None,
-                   state: Optional[str] = None) -> tuple[List[dict], int]:
-    """Fetch listings from auto.dev API. Returns (listings, pages_used)."""
+                   state: Optional[str] = None, zip_code: Optional[str] = None,
+                   radius_miles: Optional[int] = None) -> tuple[List[dict], int]:
+    """Fetch listings from auto.dev API. Returns (listings, pages_used).
+    Supports geo search via zip_code + radius_miles (auto.dev handles radius natively).
+    """
     if not AUTO_DEV_API_KEY:
         raise RuntimeError("AUTO_DEV_API_KEY is not set.")
 
@@ -364,7 +412,11 @@ def fetch_from_api(make: str, model: str, year: Optional[int] = None,
             "limit":         100,
         }
         if year:  params["vehicle.year"] = year
-        if state: params["retailListing.state"] = state
+        if zip_code:
+            params["zip"]      = zip_code
+            params["distance"] = radius_miles or 100
+        elif state:
+            params["retailListing.state"] = state
 
         log.info(f"  [auto.dev] pg{page} — {make} {model} {year or ''} {state or ''}")
         try:
@@ -539,7 +591,9 @@ def query_inventory(key: str, max_price: Optional[int] = None,
                     drivetrain: Optional[str] = None, max_mileage: Optional[int] = None,
                     color: Optional[str] = None, no_accidents: Optional[bool] = None,
                     one_owner: Optional[bool] = None,
-                    year_from: Optional[int] = None) -> List[dict]:
+                    year_from: Optional[int] = None,
+                    zip_code: Optional[str] = None,
+                    radius_miles: Optional[int] = None) -> List[dict]:
     """
     Read active listings from inventory DB.
     All filtering/sorting happens in SQLite — zero API calls.
@@ -581,13 +635,37 @@ def query_inventory(key: str, max_price: Optional[int] = None,
         "price":    "listing_price ASC",
         "discount": "discount_pct DESC",
         "newest":   "first_seen_at DESC",
+        "distance": "score DESC",   # distance sort applied in Python post-filter via Haversine
     }.get(sort_by, "score DESC")
 
     sql = f"SELECT * FROM inventory WHERE {' AND '.join(wheres)} ORDER BY {order}"
     conn = get_db()
     rows = conn.execute(sql, params).fetchall()
     conn.close()
-    return [dict(r) for r in rows]
+    results = [dict(r) for r in rows]
+
+    # ── Geo post-filter: if zip+radius provided, calculate distances and filter ──
+    # auto.dev already geo-filtered at ingest time, but this adds distance_miles
+    # to each row and re-filters any cached nationwide results.
+    if zip_code and radius_miles:
+        coords = geocode_zip(zip_code)
+        if coords:
+            user_lat, user_lng = coords
+            in_range = []
+            for r in results:
+                dlat = r.get("dealer_lat")
+                dlng = r.get("dealer_lng")
+                if dlat and dlng:
+                    dist = haversine_miles(user_lat, user_lng, dlat, dlng)
+                    r["distance_miles"] = round(dist, 1)
+                    if dist <= radius_miles:
+                        in_range.append(r)
+                else:
+                    r["distance_miles"] = None
+                    in_range.append(r)
+            results = sorted(in_range, key=lambda x: (x["distance_miles"] is None, x.get("distance_miles", 9999)))
+
+    return results
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -608,11 +686,17 @@ async def search(
     no_accidents: Optional[bool]= Query(None, description="true = 0 accidents only"),
     one_owner:    Optional[bool]= Query(None, description="true = single owner only"),
     year_from:    Optional[int] = Query(None, description="minimum model year, e.g. 2020"),
-    sort_by:      str           = Query("score", description="score | price | discount | newest"),
+    zip_code:     Optional[str] = Query(None, description="5-digit US zip code for geo radius search"),
+    radius_miles: Optional[int] = Query(None, description="Search radius in miles around zip (default 100)"),
+    sort_by:      str           = Query("score", description="score | price | discount | newest | distance"),
     page:         int           = Query(1, ge=1),
     per_page:     int           = Query(20, ge=1, le=100),
 ):
-    key            = search_key(make, model, year, state)
+    # Zip-based geo search takes priority over state filter
+    eff_state  = None if zip_code else state
+    eff_radius = radius_miles or (100 if zip_code else None)
+
+    key            = search_key(make, model, year, eff_state, zip_code, eff_radius)
     api_calls_used = 0
     synced_now     = False
 
@@ -620,7 +704,7 @@ async def search(
         if DATA_PROVIDER == "none":
             raise HTTPException(500, "No data provider configured. Set AUTO_DEV_API_KEY.")
         log.info(f"Cache MISS / stale — fetching from {DATA_PROVIDER}: {key}")
-        fresh, pages = fetch_from_api(make, model, year, state)
+        fresh, pages = fetch_from_api(make, model, year, eff_state, zip_code, eff_radius)
         if not fresh:
             return {"results": [], "total": 0, "api_calls_used": pages,
                     "cached": False, "data_age_hours": 0,
@@ -632,11 +716,14 @@ async def search(
     else:
         log.info(f"Cache HIT — serving from DB: {key}")
 
+    # Sort by distance automatically when geo mode is active
+    eff_sort = "distance" if zip_code and sort_by == "score" else sort_by
+
     # Query DB (zero API calls)
-    listings = query_inventory(key, max_price, condition, state, sort_by,
+    listings = query_inventory(key, max_price, condition, eff_state, eff_sort,
                                drivetrain=drivetrain, max_mileage=max_mileage,
                                color=color, no_accidents=no_accidents, one_owner=one_owner,
-                               year_from=year_from)
+                               year_from=year_from, zip_code=zip_code, radius_miles=eff_radius)
 
     total = len(listings)
     start = (page - 1) * per_page
@@ -934,25 +1021,31 @@ async def ai_chat(
             "total":   0,
         }
 
-    make       = intent.get("make", "")
-    model      = intent.get("model", "")
-    year       = intent.get("year")
-    state      = intent.get("state") or None
-    max_price  = intent.get("max_price")
-    condition  = intent.get("condition") or None
-    drivetrain = intent.get("drivetrain") or None
-    max_mileage= intent.get("max_mileage")
-    color      = intent.get("color") or None
-    no_acc     = intent.get("no_accidents", False)
-    one_own    = intent.get("one_owner", False)
+    make         = intent.get("make", "")
+    model        = intent.get("model", "")
+    year         = intent.get("year")
+    state        = intent.get("state") or None
+    max_price    = intent.get("max_price")
+    condition    = intent.get("condition") or None
+    drivetrain   = intent.get("drivetrain") or None
+    max_mileage  = intent.get("max_mileage")
+    color        = intent.get("color") or None
+    no_acc       = intent.get("no_accidents", False)
+    one_own      = intent.get("one_owner", False)
+    zip_code     = intent.get("zip_code") or None
+    radius_miles = intent.get("radius_miles") or None
 
-    key = search_key(make, model, year, state)
+    # Zip-based geo search takes priority over state filter
+    eff_state  = None if zip_code else state
+    eff_radius = radius_miles or (100 if zip_code else None)
+
+    key = search_key(make, model, year, eff_state, zip_code, eff_radius)
     api_calls = 0
     if is_stale(key):
         if DATA_PROVIDER == "none":
             return {"error": "No data provider configured. Set AUTO_DEV_API_KEY.", "intent": intent,
                     "results": [], "total": 0}
-        fresh, pages = fetch_from_api(make, model, year, state)
+        fresh, pages = fetch_from_api(make, model, year, eff_state, zip_code, eff_radius)
         if fresh:
             delta_sync(key, fresh, pages)
         api_calls = pages
@@ -960,7 +1053,9 @@ async def ai_chat(
     db_params = {
         "make": make, "model": model,
         **({"year": year} if year else {}),
-        **({"state": state} if state else {}),
+        **({"state": eff_state} if eff_state else {}),
+        **({"zip_code": zip_code} if zip_code else {}),
+        **({"radius_miles": eff_radius} if eff_radius else {}),
         **({"max_price": max_price} if max_price else {}),
         **({"condition": condition} if condition else {}),
         **({"drivetrain": drivetrain} if drivetrain else {}),
@@ -970,9 +1065,10 @@ async def ai_chat(
         **({"one_owner": True} if one_own else {}),
     }
 
-    listings = query_inventory(key, max_price, condition, state, "score",
+    listings = query_inventory(key, max_price, condition, eff_state, "score",
                                drivetrain=drivetrain, max_mileage=max_mileage,
-                               color=color, no_accidents=no_acc, one_owner=one_own)
+                               color=color, no_accidents=no_acc, one_owner=one_own,
+                               zip_code=zip_code, radius_miles=eff_radius)
 
     prices    = [l["listing_price"] for l in listings if l.get("listing_price")]
     discounts = [l["discount_pct"] for l in listings if l.get("discount_pct")]

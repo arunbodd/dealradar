@@ -1196,6 +1196,27 @@ a.dealer-link:hover { color: var(--gold); text-decoration: underline; }
              onchange="doSearch(1)"/>
     </div>
 
+    <!-- Location: Zip + Radius -->
+    <div class="sidebar-card">
+      <div class="sidebar-title">Location</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div style="display:flex;gap:8px;align-items:center;">
+          <label for="zip-code" style="font-size:0.72rem;font-weight:600;color:var(--muted);letter-spacing:0.06em;flex-shrink:0">ZipCode</label>
+          <input class="inp" id="zip-code" type="text" placeholder="e.g. 94103" maxlength="5" pattern="\\d{5}" style="width:110px;min-width:80px;" onchange="doSearch(1)" aria-label="Zip code" />
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <label for="radius-select" style="font-size:0.72rem;font-weight:600;color:var(--muted);letter-spacing:0.06em;flex-shrink:0">Radius</label>
+          <select id="radius-select" class="inp" style="width:110px;min-width:80px" onchange="doSearch(1)" aria-label="Search radius">
+            <option value="">Any</option>
+            <option value="10">10 mi</option>
+            <option value="25">25 mi</option>
+            <option value="50">50 mi</option>
+            <option value="100">100 mi</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
     <!-- Drivetrain -->
     <div class="sidebar-card" id="drivetrain-card" style="display:none">
       <div class="sidebar-title">Drivetrain</div>
@@ -1440,6 +1461,11 @@ async function doSearch(page = 1) {
     params.set('year_from', yearSlider.value);
   const colorVal = document.getElementById('color-select')?.value;
   if(colorVal) params.set('color', colorVal);
+  // Zip code and search radius
+  const zip = document.getElementById('zip-code')?.value.trim();
+  const radius = document.getElementById('radius-select')?.value;
+  if(zip)    params.set('zip', zip);
+  if(radius) params.set('radius', radius);
   if(filterNoAccidents) params.set('no_accidents', 'true');
   if(filterOneOwner)    params.set('one_owner', 'true');
 

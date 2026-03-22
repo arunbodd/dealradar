@@ -84,6 +84,8 @@ def extract_search_intent(query: str) -> dict:
                 "color":        {"type": "string",  "description": "Exterior color preference"},
                 "no_accidents": {"type": "boolean", "description": "True if user wants accident-free vehicles only"},
                 "one_owner":    {"type": "boolean", "description": "True if user wants single-owner vehicles"},
+                "zip_code":     {"type": "string",  "description": "5-digit US ZIP code if the user mentions one, e.g. 'near 30047', 'within 90210'. When zip_code is set, do NOT also set state."},
+                "radius_miles": {"type": "integer", "description": "Search radius in miles around the ZIP code. If a ZIP is given but no radius mentioned, default to 100."},
                 "brand_was_specified": {
                     "type": "boolean",
                     "description": "True if the user explicitly named a car brand/make. False if you are recommending a brand based on feature description."
@@ -132,6 +134,8 @@ FEATURE MATCHING RULES — when user describes features without naming a brand:
 - 'clean history' / 'accident-free' / 'no accidents' → no_accidents=true
 - 'low miles' → max_mileage=30000; 'very low miles' → 15000
 - Atlanta / GA → state=GA; Southeast → state=GA; Texas → state=TX
+- 'near 30047' / 'within 50 miles of 90210' / 'zip 77001' → zip_code=that zip, radius_miles=50 (or 100 if unspecified)
+- When zip_code is set, do NOT also set state — zip takes priority
 - 'affordable' / 'budget' → used/cpo condition
 - 'certified' / 'CPO' → condition=cpo
 
