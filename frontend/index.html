@@ -2390,9 +2390,12 @@ function renderResults(data, make, model) {
   }
 
   // Results count
-  const start = (page-1)*12+1, end = Math.min(page*12, total);
-  document.getElementById('results-count-label').innerHTML =
-    `Showing <strong>${start}–${end}</strong> of <strong>${total.toLocaleString()}</strong> results for <strong>${make} ${model}</strong>`;
+  const safePage = (page && page > 0) ? page : 1;
+  const start = (safePage - 1) * 12 + 1, end = Math.min(safePage * 12, total);
+  const carLabel = (make || model) ? ` for <strong>${make} ${model}</strong>`.replace(' for <strong> </strong>','') : '';
+  document.getElementById('results-count-label').innerHTML = total === 0
+    ? `No results found${carLabel}`
+    : `Showing <strong>${start}–${end}</strong> of <strong>${total.toLocaleString()}</strong> results${carLabel}`;
 
   // Best deal banner (page 1 only)
   const bdWrap = document.getElementById('best-deal-wrap');
