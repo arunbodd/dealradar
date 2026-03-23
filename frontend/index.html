@@ -4,9 +4,10 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>DealRadar · Best Car Deals Across the USA</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚗</text></svg>"/>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='18' fill='%23C4A253'/><text y='.88em' font-size='72' font-weight='700' font-family='Georgia,serif' fill='%230a0b10' text-anchor='middle' x='50'>D</text></svg>"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cinzel:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Barlow+Condensed:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <style>
 /* ══════════════════════════════════════════════════════
    RESET & BASE
@@ -36,10 +37,196 @@
   --radius-sm: 8px;
 }
 
+/* ── Light mode overrides ── */
+[data-theme="light"] {
+  --bg:        #E5E8F0;
+  --bg2:       #FFFFFF;
+  --bg3:       #D4D8E4;
+  --card:      #F8F9FC;
+  --border:    rgba(0,0,0,0.11);
+  --border-md: rgba(0,0,0,0.18);
+  --gold:      #7A5500;
+  --gold-soft: rgba(122,85,0,0.10);
+  --blue:      #1E56B0;
+  --blue2:     #1740A0;
+  --cyan:      #0C6780;
+  --emerald:   #03622C;
+  --rose:      #A50E2D;
+  --purple:    #5B1FA8;
+  --text:      #0D1117;
+  --muted:     #525B6B;
+  --subtle:    #2D3748;
+  --glow:      rgba(122,85,0,0.03);
+}
+
+/* ── Body / structure ── */
+[data-theme="light"] body { background: var(--bg); color: var(--text); }
+[data-theme="light"] header {
+  background: rgba(241,243,248,0.95);
+  border-bottom-color: rgba(0,0,0,0.08);
+}
+[data-theme="light"] .bg-mesh { opacity: 0.2; filter: saturate(0.4); }
+
+/* ── Inputs / selects / textareas ── */
+[data-theme="light"] .inp,
+[data-theme="light"] select,
+[data-theme="light"] textarea,
+[data-theme="light"] .color-select,
+[data-theme="light"] .ai-input,
+[data-theme="light"] .chat-input {
+  background: #FFFFFF;
+  border-color: rgba(0,0,0,0.20);
+  color: var(--text);
+}
+[data-theme="light"] select option,
+[data-theme="light"] .color-select option { background: #FFFFFF; color: #111827; }
+[data-theme="light"] .inp::placeholder,
+[data-theme="light"] .ai-input::placeholder,
+[data-theme="light"] .chat-input::placeholder { color: #9CA3AF; }
+
+/* ── Chips / filter chips ── */
+[data-theme="light"] .chip,
+[data-theme="light"] .filter-chip { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.09); }
+
+/* ── Cards ── */
+[data-theme="light"] .deal-card {
+  background: #FFFFFF; border-color: rgba(0,0,0,0.10);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.05);
+}
+[data-theme="light"] .deal-card:hover {
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12), 0 0 0 1px rgba(139,100,0,0.14);
+  border-color: rgba(196,162,83,0.25);
+}
+[data-theme="light"] .meta-tag { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.09); }
+[data-theme="light"] .ring-bg  { stroke: rgba(0,0,0,0.12); }
+
+/* ── Card action buttons ── */
+[data-theme="light"] .btn-carfax {
+  background: rgba(0,0,0,0.03); border-color: rgba(0,0,0,0.1); color: #4B5563;
+}
+[data-theme="light"] .btn-carfax:hover { background: var(--gold-soft); border-color: rgba(196,162,83,0.45); color: #8B6400; }
+[data-theme="light"] .btn-detail {
+  background: rgba(0,0,0,0.03); border-color: rgba(0,0,0,0.1); color: #4B5563;
+}
+[data-theme="light"] .btn-ai-analysis {
+  background: rgba(37,99,200,0.06); border-color: rgba(37,99,200,0.2); color: #1d4ed8;
+}
+[data-theme="light"] .btn-compare {
+  background: rgba(109,40,217,0.05); border-color: rgba(109,40,217,0.18); color: #6D28D9;
+}
+[data-theme="light"] .btn-compare.comparing {
+  background: rgba(109,40,217,0.1); border-color: rgba(109,40,217,0.35); color: #5b21b6;
+}
+
+/* ── Sidebar / panels ── */
+[data-theme="light"] .sidebar-card,
+[data-theme="light"] .search-card,
+[data-theme="light"] .chat-panel { background: #F8F9FC; border-color: rgba(0,0,0,0.12); box-shadow: 0 2px 12px rgba(0,0,0,0.07); }
+[data-theme="light"] .sidebar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); }
+
+/* ── Sort buttons ── */
+[data-theme="light"] .sort-btn:hover { background: rgba(0,0,0,0.04); }
+
+/* ── Filter toggles / toggle switches ── */
+[data-theme="light"] .toggle-switch { background: rgba(0,0,0,0.1); border-color: rgba(0,0,0,0.12); }
+[data-theme="light"] .toggle-switch::after { background: #6B7280; }
+
+/* ── Mileage range slider track ── */
+[data-theme="light"] .mileage-range input[type="range"] { background: rgba(0,0,0,0.1); }
+
+/* ── View toggle ── */
+[data-theme="light"] .view-toggle { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.09); }
+
+/* ── Stats bar pills ── */
+[data-theme="light"] .stat-pill { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.08); }
+
+/* ── Score / compare bars ── */
+[data-theme="light"] .score-bar,
+[data-theme="light"] .cmp-score-bar { background: rgba(0,0,0,0.09); }
+
+/* ── Inventory health panel ── */
+[data-theme="light"] .inv-stat { background: rgba(0,0,0,0.03); border-color: rgba(0,0,0,0.08); }
+[data-theme="light"] .inv-data-age { background: rgba(0,0,0,0.03); }
+[data-theme="light"] .inv-item { border-bottom-color: rgba(0,0,0,0.07); }
+
+/* ── Best deal banner ── */
+[data-theme="light"] .best-deal-banner {
+  background: linear-gradient(135deg, rgba(37,99,200,0.05), rgba(14,116,144,0.04));
+  border-color: rgba(37,99,200,0.15);
+}
+
+/* ── API usage meter ── */
+[data-theme="light"] .api-meter { background: rgba(0,0,0,0.09); }
+
+/* ── Modal (deal detail) ── */
+[data-theme="light"] .modal,
+[data-theme="light"] .modal-header { background: #FFFFFF; }
+[data-theme="light"] .modal-close { background: rgba(0,0,0,0.05); color: #6B7280; }
+[data-theme="light"] .modal-close:hover { background: rgba(0,0,0,0.09); color: #111827; }
+[data-theme="light"] .detail-item { background: rgba(0,0,0,0.02); border-color: rgba(0,0,0,0.07); }
+
+/* ── Compare modal / tray ── */
+[data-theme="light"] .compare-modal-inner { background: #FFFFFF; }
+[data-theme="light"] #compare-tray { background: rgba(255,255,255,0.97); border-top-color: rgba(109,40,217,0.18); }
+[data-theme="light"] .compare-tray-slot { background: rgba(0,0,0,0.03); }
+[data-theme="light"] .compare-table td { border-bottom-color: rgba(0,0,0,0.06); }
+[data-theme="light"] .compare-table td:first-child { background: rgba(0,0,0,0.02); }
+
+/* ── Map popups ── */
+[data-theme="light"] .leaflet-popup-content-wrapper { background: #FFFFFF; border-color: rgba(0,0,0,0.1); }
+[data-theme="light"] .leaflet-popup-tip { background: #FFFFFF; }
+[data-theme="light"] .map-popup-title { color: #111827; }
+[data-theme="light"] .map-popup-meta  { color: #6B7280; }
+
+/* ── Chat panel internals ── */
+[data-theme="light"] .chat-messages { scrollbar-color: rgba(0,0,0,0.12) transparent; }
+[data-theme="light"] .chat-messages::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.14); }
+[data-theme="light"] .chat-msg-ai { background: rgba(0,0,0,0.03); border-color: rgba(0,0,0,0.08); color: #111827; }
+[data-theme="light"] .chat-msg-user { background: rgba(196,162,83,0.1); border-color: rgba(196,162,83,0.22); color: #111827; }
+[data-theme="light"] .tool-tag { background: rgba(0,0,0,0.05); }
+[data-theme="light"] .tool-json { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.06); color: #1a5c3b; }
+[data-theme="light"] .chat-history-toggle:hover { background: rgba(0,0,0,0.03); }
+[data-theme="light"] .chat-history-panel { scrollbar-color: rgba(0,0,0,0.1) transparent; }
+[data-theme="light"] .chat-history-item:hover { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.08); }
+
+/* ── Toast ── */
+[data-theme="light"] .toast { box-shadow: 0 8px 32px rgba(0,0,0,0.15); }
+
+/* ── Theme toggle switch ── */
+.theme-toggle {
+  display: flex; align-items: center; gap: 8px; cursor: pointer;
+  padding: 4px 0;
+}
+.theme-toggle-label {
+  font-family: 'Barlow Condensed', sans-serif; font-size: 0.94rem; letter-spacing: 0.02em;
+  color: var(--muted); user-select: none; transition: color .2s;
+  width: 24px;
+}
+.theme-switch {
+  position: relative; width: 40px; height: 22px;
+}
+.theme-switch input { opacity: 0; width: 0; height: 0; }
+.theme-slider {
+  position: absolute; inset: 0; cursor: pointer;
+  background: rgba(255,255,255,0.1); border: 1px solid var(--border-md);
+  border-radius: 22px; transition: all .3s;
+}
+.theme-slider::before {
+  content: ''; position: absolute;
+  height: 16px; width: 16px; left: 2px; bottom: 2px;
+  background: var(--subtle); border-radius: 50%;
+  transition: transform .3s, background .3s;
+  display: flex; align-items: center; justify-content: center;
+}
+input:checked + .theme-slider { background: rgba(196,162,83,0.2); border-color: rgba(196,162,83,0.4); }
+input:checked + .theme-slider::before { transform: translateX(18px); background: var(--gold); }
+[data-theme="light"] .theme-slider { background: rgba(0,0,0,0.08); }
+[data-theme="light"] .theme-slider::before { background: var(--subtle); }
+
 html { scroll-behavior: smooth; }
 
 body {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Barlow', sans-serif;
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
@@ -72,9 +259,9 @@ header {
 
 .logo {
   display: flex; align-items: center; gap: 12px;
-  font-family: 'Cinzel', serif;
-  font-size: 1.35rem; font-weight: 600; color: var(--text);
-  letter-spacing: 0.06em;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.5rem; font-weight: 700; color: var(--text);
+  letter-spacing: 0.04em; text-transform: uppercase;
   text-decoration: none;
 }
 .logo-mark {
@@ -82,8 +269,8 @@ header {
   border: 1px solid var(--gold);
   border-radius: 4px;
   display: flex; align-items: center; justify-content: center;
-  font-family: 'Cinzel', serif;
-  font-size: 0.85rem; font-weight: 700; color: var(--gold);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.99rem; font-weight: 700; color: var(--gold);
   letter-spacing: 0;
   flex-shrink: 0;
 }
@@ -92,9 +279,9 @@ header {
   background: var(--border-md);
 }
 .logo-sub {
-  font-size: 0.6rem; font-weight: 500; color: var(--muted);
-  letter-spacing: 0.16em; text-transform: uppercase;
-  font-family: 'Cinzel', serif;
+  font-size: 0.84rem; font-weight: 500; color: var(--muted);
+  letter-spacing: 0.10em; text-transform: uppercase;
+  font-family: 'Barlow Condensed', sans-serif;
 }
 
 .header-right {
@@ -105,8 +292,8 @@ header {
   display: flex; align-items: center; gap: 8px;
   border-left: 1px solid var(--border-md);
   padding-left: 20px;
-  font-size: 0.72rem; color: var(--subtle); font-weight: 400;
-  letter-spacing: 0.04em;
+  font-size: 0.86rem; color: var(--subtle); font-weight: 400;
+  letter-spacing: 0.02em;
 }
 .api-dot {
   width: 5px; height: 5px; border-radius: 50%;
@@ -128,12 +315,12 @@ header {
   display: inline-flex; align-items: center; gap: 8px;
   background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.25);
   border-radius: 20px; padding: 3px 12px; margin-bottom: 10px;
-  font-size: 0.72rem; font-weight: 600; color: var(--blue2);
-  letter-spacing: 0.05em; text-transform: uppercase;
+  font-size: 0.86rem; font-weight: 600; color: var(--blue2);
+  letter-spacing: 0.02em; text-transform: uppercase;
 }
 
 .hero h1 {
-  font-family: 'Cinzel', serif;
+  font-family: 'Barlow Condensed', sans-serif;
   font-size: clamp(1.6rem, 3.5vw, 2.4rem);
   font-weight: 700; line-height: 1.2;
   background: linear-gradient(135deg, #fff 0%, #94a3b8 50%, var(--blue2) 100%);
@@ -143,7 +330,7 @@ header {
 }
 
 .hero p {
-  color: var(--subtle); font-size: 0.88rem; line-height: 1.5;
+  color: var(--subtle); font-size: 1.02rem; line-height: 1.5;
   max-width: 580px; margin: 0 auto 14px;
 }
 
@@ -169,8 +356,8 @@ header {
 .field { display: flex; flex-direction: column; gap: 7px; }
 
 label {
-  font-size: 0.72rem; font-weight: 600; color: var(--muted);
-  letter-spacing: 0.08em; text-transform: uppercase;
+  font-size: 0.86rem; font-weight: 600; color: var(--muted);
+  letter-spacing: 0.03em; text-transform: uppercase;
 }
 
 .inp, select {
@@ -178,8 +365,8 @@ label {
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   color: var(--text);
-  font-family: 'Inter', sans-serif;
-  font-size: 0.92rem; padding: 11px 14px;
+  font-family: 'Barlow', sans-serif;
+  font-size: 1.06rem; padding: 11px 14px;
   outline: none; width: 100%;
   transition: border-color .2s, box-shadow .2s;
   appearance: none;
@@ -195,7 +382,7 @@ select option { background: #1e293b; color: var(--text); }
 .btn-search {
   background: linear-gradient(135deg, var(--blue), #6366f1);
   border: none; border-radius: var(--radius-sm);
-  color: #fff; font-size: 0.95rem; font-weight: 700;
+  color: #fff; font-size: 1.2rem; font-weight: 700;
   padding: 11px 28px; cursor: pointer; white-space: nowrap;
   transition: transform .15s, box-shadow .15s, opacity .15s;
   box-shadow: 0 4px 20px rgba(59,130,246,0.35);
@@ -212,10 +399,10 @@ select option { background: #1e293b; color: var(--text); }
 .chip-group { display: flex; gap: 8px; flex-wrap: wrap; }
 
 .chip {
-  font-family: 'Cinzel', serif;
+  font-family: 'Barlow Condensed', sans-serif;
   background: rgba(255,255,255,0.04); border: 1px solid var(--border);
-  border-radius: 20px; padding: 5px 14px; font-size: 0.72rem; color: var(--subtle);
-  cursor: pointer; transition: all .15s; user-select: none; letter-spacing: 0.06em;
+  border-radius: 20px; padding: 5px 14px; font-size: 0.86rem; color: var(--subtle);
+  cursor: pointer; transition: all .15s; user-select: none; letter-spacing: 0.02em;
 }
 .chip:hover, .chip.active {
   background: rgba(59,130,246,0.12); border-color: rgba(59,130,246,0.35);
@@ -234,14 +421,25 @@ select option { background: #1e293b; color: var(--text); }
 
 .stat-pill {
   background: var(--card); border: 1px solid var(--border);
-  border-radius: 6px; padding: 6px 14px;
+  border-radius: 8px; padding: 10px 18px;
   display: flex; align-items: center; gap: 8px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+  flex-direction: column; align-items: flex-start;
 }
-.stat-label { font-family: 'Cinzel', serif; font-size: 0.55rem; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; }
-.stat-value { font-size: 0.88rem; font-weight: 600; color: var(--text); font-family: 'Cinzel', serif; }
+.stat-label {
+  font-family: 'Barlow Condensed', sans-serif; font-size: 0.82rem;
+  color: var(--muted); letter-spacing: 0.07em; text-transform: uppercase;
+  margin-bottom: 2px;
+}
+.stat-value {
+  font-size: 1.55rem; font-weight: 700; color: var(--text);
+  font-family: 'Barlow Condensed', sans-serif; line-height: 1;
+  letter-spacing: -0.01em;
+}
 .stat-value.green { color: var(--emerald); }
 .stat-value.blue  { color: var(--blue2); }
 .stat-value.gold  { color: var(--gold); }
+[data-theme="light"] .stat-pill { box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
 
 /* ══════════════════════════════════════════════════════
    RESULTS LAYOUT — 3 column: filters | listings | chat
@@ -254,7 +452,24 @@ select option { background: #1e293b; color: var(--text); }
   grid-template-columns: 210px 1fr 360px;
   gap: 16px;
   align-items: start;
+  transition: grid-template-columns .25s ease;
 }
+.results-layout.sidebar-collapsed {
+  grid-template-columns: 28px 1fr 360px;
+}
+.results-layout.sidebar-collapsed .sidebar > *:not(.sidebar-collapse-btn-wrap) {
+  display: none;
+}
+.sidebar-collapse-btn-wrap {
+  display: flex; justify-content: center; margin-bottom: 6px;
+}
+.sidebar-collapse-btn {
+  background: var(--card); border: 1px solid var(--border); border-radius: 4px;
+  color: var(--muted); cursor: pointer; padding: 4px 7px; font-size: .80rem;
+  transition: all .15s; line-height: 1;
+}
+.sidebar-collapse-btn:hover { border-color: var(--border-md); color: var(--text); }
+.results-layout.sidebar-collapsed .sidebar-collapse-btn { writing-mode: vertical-rl; padding: 8px 4px; }
 
 /* Sidebar */
 .sidebar {
@@ -276,9 +491,9 @@ select option { background: #1e293b; color: var(--text); }
 }
 
 .sidebar-title {
-  font-family: 'Cinzel', serif;
-  font-size: 0.58rem; font-weight: 600; color: var(--muted);
-  text-transform: uppercase; letter-spacing: 0.14em; margin-bottom: 12px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.86rem; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px;
 }
 
 .sort-options { display: flex; flex-direction: column; gap: 4px; }
@@ -286,9 +501,9 @@ select option { background: #1e293b; color: var(--text); }
 .sort-btn {
   background: none; border: 1px solid transparent;
   border-radius: var(--radius-sm); color: var(--subtle);
-  font-size: 0.72rem; padding: 7px 10px; cursor: pointer;
+  font-size: 0.86rem; padding: 7px 10px; cursor: pointer;
   text-align: left; transition: all .15s; display: flex; align-items: center; gap: 8px;
-  font-family: 'Cinzel', serif; letter-spacing: 0.06em;
+  font-family: 'Barlow Condensed', sans-serif; letter-spacing: 0.02em;
 }
 .sort-btn:hover { background: rgba(255,255,255,0.03); color: var(--text); }
 .sort-btn.active {
@@ -306,7 +521,7 @@ select option { background: #1e293b; color: var(--text); }
   margin-bottom: 20px;
 }
 .results-count {
-  font-size: 0.875rem; color: var(--muted);
+  font-size: 1.0rem; color: var(--muted);
 }
 .results-count strong { color: var(--text); }
 
@@ -352,9 +567,9 @@ select option { background: #1e293b; color: var(--text); }
   display: flex; gap: 6px; flex-wrap: wrap;
 }
 .badge {
-  font-family: 'Cinzel', serif;
+  font-family: 'Barlow Condensed', sans-serif;
   border-radius: 3px; padding: 3px 8px;
-  font-size: 0.55rem; font-weight: 600; letter-spacing: 0.1em;
+  font-size: 0.96rem; font-weight: 600; letter-spacing: 0.02em;
   text-transform: uppercase; backdrop-filter: blur(4px);
 }
 .badge-cpo      { background: rgba(74,144,112,0.75);  color: #c0edd8; border: 1px solid rgba(74,144,112,0.4); }
@@ -381,16 +596,16 @@ select option { background: #1e293b; color: var(--text); }
 .ring-text {
   position: absolute; inset: 0;
   display: flex; align-items: center; justify-content: center;
-  font-size: 0.6rem; font-weight: 800; color: var(--text);
+  font-size: 0.86rem; font-weight: 800; color: var(--text);
   transform: none;
 }
 
 .card-body { padding: 16px; flex: 1; display: flex; flex-direction: column; gap: 10px; }
 
 .card-title {
-  font-family: 'Cinzel', serif;
-  font-size: 0.92rem; font-weight: 600; color: var(--text);
-  line-height: 1.3; letter-spacing: 0.04em;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.2rem; font-weight: 700; color: var(--text);
+  line-height: 1.3; letter-spacing: 0.02em;
 }
 .card-trim { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
 
@@ -398,10 +613,10 @@ select option { background: #1e293b; color: var(--text); }
   display: flex; align-items: baseline; justify-content: space-between;
 }
 .card-price {
-  font-size: 1.25rem; font-weight: 700;
-  font-family: 'Cinzel', serif;
+  font-size: 1.45rem; font-weight: 700;
+  font-family: 'Barlow Condensed', sans-serif;
   color: var(--gold);
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
 }
 .card-msrp {
   font-size: 0.8rem; color: var(--muted); text-decoration: line-through;
@@ -411,7 +626,7 @@ select option { background: #1e293b; color: var(--text); }
   display: inline-flex; align-items: center; gap: 6px;
   background: rgba(74,144,112,0.08); border: 1px solid rgba(74,144,112,0.18);
   border-radius: 4px; padding: 3px 9px;
-  font-size: 0.72rem; font-weight: 600; color: var(--emerald);
+  font-size: 0.86rem; font-weight: 600; color: var(--emerald);
   letter-spacing: 0.02em;
 }
 
@@ -421,7 +636,7 @@ select option { background: #1e293b; color: var(--text); }
 .meta-tag {
   background: rgba(255,255,255,0.04); border: 1px solid var(--border);
   border-radius: 5px; padding: 3px 8px;
-  font-size: 0.72rem; color: var(--subtle);
+  font-size: 0.86rem; color: var(--subtle);
   display: flex; align-items: center; gap: 4px;
 }
 
@@ -433,32 +648,223 @@ select option { background: #1e293b; color: var(--text); }
 .dealer-name { font-weight: 600; color: var(--subtle); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .card-actions {
-  display: flex; gap: 6px; padding: 0 14px 14px;
+  display: flex; flex-direction: column; gap: 5px; padding: 0 14px 14px;
 }
-.btn-carfax, .btn-detail {
+.card-actions-row {
+  display: flex; gap: 5px;
+}
+/* Utility buttons: VIN Search, CARFAX, Dealer/Photos — small */
+.btn-carfax {
   flex: 1; border: none; border-radius: 4px;
-  font-size: 0.72rem; font-weight: 500; padding: 7px 6px; cursor: pointer;
+  font-size: 0.86rem; font-weight: 500; padding: 7px 4px; cursor: pointer;
   transition: all .15s; text-align: center; text-decoration: none;
   display: flex; align-items: center; justify-content: center; gap: 4px;
-  letter-spacing: 0.04em; text-transform: uppercase;
-}
-.btn-carfax {
+  letter-spacing: 0.02em; text-transform: uppercase; white-space: nowrap;
   background: transparent; border: 1px solid var(--border-md);
   color: var(--subtle);
 }
 .btn-carfax:hover { border-color: var(--gold); color: var(--gold); background: var(--gold-soft); }
+/* AI Analysis + Details — full-width per row, clearly readable */
+.btn-ai-analysis {
+  flex: 1; border: none; border-radius: 4px;
+  font-size: 0.86rem; font-weight: 600; padding: 8px 6px; cursor: pointer;
+  transition: all .15s; text-align: center; text-decoration: none;
+  display: flex; align-items: center; justify-content: center; gap: 4px;
+  letter-spacing: 0.02em; text-transform: uppercase; white-space: nowrap;
+  background: rgba(74,122,181,0.08); border: 1px solid rgba(74,122,181,0.25); color: var(--blue2);
+}
+.btn-ai-analysis:hover { border-color: var(--blue); background: rgba(74,122,181,0.16); color: var(--blue2); }
 .btn-detail {
-  background: transparent; border: 1px solid var(--border-md);
-  color: var(--subtle);
+  flex: 1; border: none; border-radius: 4px;
+  font-size: 0.86rem; font-weight: 500; padding: 8px 6px; cursor: pointer;
+  transition: all .15s; text-align: center; text-decoration: none;
+  display: flex; align-items: center; justify-content: center; gap: 4px;
+  letter-spacing: 0.02em; text-transform: uppercase; white-space: nowrap;
+  background: transparent; border: 1px solid var(--border-md); color: var(--subtle);
 }
 .btn-detail:hover { border-color: var(--blue); color: var(--blue2); background: rgba(74,122,181,0.08); }
+
+/* Links dropdown on card */
+.card-links-wrap { position: relative; }
+.card-links-toggle { white-space: nowrap; }
+.card-links-menu {
+  display: none; position: absolute; bottom: calc(100% + 4px); right: 0;
+  background: var(--card); border: 1px solid var(--border-md);
+  border-radius: 6px; overflow: hidden; z-index: 50; min-width: 140px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.28);
+}
+.card-links-wrap.open .card-links-menu { display: block; }
+.card-link-item {
+  display: block; padding: 8px 13px;
+  font-family: 'Barlow Condensed', sans-serif; font-size: .94rem;
+  font-weight: 500; color: var(--subtle); text-decoration: none;
+  transition: background .12s; letter-spacing: .01em;
+  border-bottom: 1px solid var(--border);
+}
+.card-link-item:last-child { border-bottom: none; }
+.card-link-item:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+.card-link-item--gold { color: var(--gold); }
+[data-theme="light"] .card-links-menu { box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+[data-theme="light"] .card-link-item:hover { background: rgba(0,0,0,0.04); }
+
+/* Compare button — full width second row so it's always visible */
+.btn-compare {
+  width: 100%; border: none; border-radius: 4px;
+  font-size: 0.86rem; font-weight: 600; padding: 7px 6px; cursor: pointer;
+  transition: all .15s; text-align: center; letter-spacing: 0.02em; text-transform: uppercase;
+  background: rgba(112,96,160,0.07); border: 1px solid rgba(112,96,160,0.25); color: #a78bfa;
+}
+.btn-compare:hover { border-color: var(--purple); background: rgba(112,96,160,0.14); }
+.btn-compare.comparing {
+  background: rgba(112,96,160,0.2); border-color: rgba(167,139,250,0.6);
+  color: #c4b5fd;
+}
+.deal-card.in-compare { border-color: rgba(167,139,250,0.4); box-shadow: 0 0 0 2px rgba(167,139,250,0.15); }
+
+/* ══════════════════════════════════════════════════════
+   VIEW TOGGLE (Grid / Map)
+══════════════════════════════════════════════════════ */
+.view-toggle {
+  display: flex; gap: 4px; background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border); border-radius: 8px; padding: 3px;
+}
+.view-btn {
+  font-family: 'Barlow Condensed', sans-serif; font-size: 0.96rem; letter-spacing: 0.02em;
+  padding: 5px 12px; border: none; border-radius: 5px; cursor: pointer;
+  background: transparent; color: var(--muted); transition: all .15s;
+}
+.view-btn.active { background: rgba(74,122,181,0.2); color: var(--blue2); }
+.view-btn:hover:not(.active) { color: var(--text); }
+
+/* ══════════════════════════════════════════════════════
+   MAP CONTAINER
+══════════════════════════════════════════════════════ */
+#map-container {
+  display: none; width: 100%; height: 580px;
+  border-radius: var(--radius); overflow: hidden;
+  border: 1px solid var(--border); margin-bottom: 16px;
+}
+.leaflet-popup-content-wrapper {
+  background: #0E1019; border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px; color: var(--text); font-family: 'Barlow', sans-serif;
+}
+.leaflet-popup-tip { background: #0E1019; }
+.leaflet-popup-content { margin: 10px 12px; min-width: 200px; }
+.map-popup-title { font-family: 'Barlow Condensed', sans-serif; font-size: .82rem; font-weight: 600; margin-bottom: 4px; color: #DDE1EB; }
+.map-popup-price { font-size: 1rem; font-weight: 700; color: #C4A253; margin-bottom: 6px; }
+.map-popup-meta  { font-size: .86rem; color: #78899C; line-height: 1.7; }
+.map-popup-score { display: inline-block; background: rgba(74,122,181,0.2); border: 1px solid rgba(74,122,181,0.3);
+  border-radius: 4px; padding: 2px 8px; font-size: .84rem; color: #7BA0C8; margin-top: 6px; }
+
+/* ══════════════════════════════════════════════════════
+   COMPARE TRAY (floating bottom bar)
+══════════════════════════════════════════════════════ */
+#compare-tray {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
+  background: rgba(10,12,19,0.97); border-top: 1px solid rgba(167,139,250,0.25);
+  backdrop-filter: blur(24px);
+  padding: 12px 24px; display: none;
+  align-items: center; gap: 16px;
+}
+.compare-tray-cars { display: flex; gap: 12px; flex: 1; align-items: center; }
+.compare-tray-slot {
+  background: rgba(255,255,255,0.04); border: 1px dashed rgba(167,139,250,0.3);
+  border-radius: 8px; padding: 8px 14px; min-width: 160px; position: relative;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.compare-tray-slot.filled { border-style: solid; border-color: rgba(167,139,250,0.45); background: rgba(112,96,160,0.1); }
+.compare-slot-name { font-size: .92rem; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.compare-slot-price { font-size: .86rem; color: var(--gold); }
+.compare-slot-remove {
+  position: absolute; top: 4px; right: 6px; background: none; border: none;
+  color: var(--muted); cursor: pointer; font-size: .85rem; line-height: 1;
+}
+.compare-slot-remove:hover { color: var(--rose); }
+.compare-tray-label {
+  font-family: 'Barlow Condensed', sans-serif; font-size: .84rem; letter-spacing: .1em;
+  color: #a78bfa; white-space: nowrap;
+}
+.btn-compare-now {
+  font-family: 'Barlow Condensed', sans-serif; font-size: .90rem; letter-spacing: .08em;
+  padding: 10px 24px; border: none; border-radius: 8px; cursor: pointer;
+  background: linear-gradient(135deg, rgba(112,96,160,0.9), rgba(90,72,140,0.9));
+  color: #e8e0ff; transition: all .15s; white-space: nowrap;
+}
+.btn-compare-now:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(112,96,160,0.4); }
+.btn-compare-now:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+.btn-clear-compare {
+  background: none; border: 1px solid var(--border-md); border-radius: 6px;
+  color: var(--muted); font-size: .86rem; padding: 6px 12px; cursor: pointer;
+}
+.btn-clear-compare:hover { color: var(--rose); border-color: var(--rose); }
+
+/* ══════════════════════════════════════════════════════
+   COMPARISON MODAL
+══════════════════════════════════════════════════════ */
+#compare-modal {
+  display: none; position: fixed; inset: 0; z-index: 300;
+  background: rgba(0,0,0,0.85); backdrop-filter: blur(12px);
+  overflow-y: auto; padding: 24px 16px;
+}
+.compare-modal-inner {
+  max-width: 960px; margin: 0 auto;
+  background: var(--bg2); border: 1px solid var(--border-md);
+  border-radius: 16px; overflow: hidden;
+}
+.compare-modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 28px; border-bottom: 1px solid var(--border);
+}
+.compare-modal-title {
+  font-family: 'Barlow Condensed', sans-serif; font-size: 1rem; font-weight: 600;
+  letter-spacing: .06em; text-transform: uppercase; color: var(--text);
+}
+.compare-modal-close {
+  background: none; border: none; color: var(--muted); font-size: 1.5rem;
+  cursor: pointer; line-height: 1;
+}
+.compare-modal-close:hover { color: var(--text); }
+.compare-table-wrap { overflow-x: auto; }
+.compare-table {
+  width: 100%; border-collapse: collapse; font-size: .82rem;
+}
+.compare-table th {
+  padding: 20px 20px 16px; text-align: left; vertical-align: top;
+  border-bottom: 1px solid var(--border); min-width: 200px;
+}
+.compare-table th:first-child { width: 140px; min-width: 140px; }
+.compare-th-label { font-family: 'Barlow Condensed', sans-serif; font-size: .82rem; letter-spacing: .1em; color: var(--muted); margin-bottom: 2px; }
+.compare-th-title { font-size: .85rem; font-weight: 700; color: var(--text); margin-bottom: 2px; line-height: 1.3; }
+.compare-th-price { font-family: 'Barlow Condensed', sans-serif; font-size: 1.45rem; color: var(--gold); font-weight: 700; }
+.compare-th-remove { background: none; border: none; color: var(--muted); cursor: pointer; font-size: .8rem; margin-top: 4px; }
+.compare-th-remove:hover { color: var(--rose); }
+.compare-table td {
+  padding: 12px 20px; border-bottom: 1px solid rgba(255,255,255,0.04);
+  color: var(--subtle); vertical-align: middle;
+}
+.compare-table tr:last-child td { border-bottom: none; }
+.compare-table td:first-child {
+  font-family: 'Barlow Condensed', sans-serif; font-size: .82rem; letter-spacing: .08em;
+  color: var(--muted); text-transform: uppercase; font-weight: 600;
+  background: rgba(255,255,255,0.02);
+}
+.cmp-best  { color: #4ade80; font-weight: 700; }
+.cmp-worst { color: #f87171; }
+.cmp-score-bar {
+  height: 5px; border-radius: 3px; background: rgba(255,255,255,0.06); margin-top: 4px;
+}
+.cmp-score-fill { height: 100%; border-radius: 3px; }
+.compare-car-img {
+  width: 100%; height: 100px; object-fit: cover; border-radius: 6px; margin-bottom: 8px;
+  background: var(--bg3);
+}
 
 /* ══════════════════════════════════════════════════════
    SCORE BAR (sidebar)
 ══════════════════════════════════════════════════════ */
 .score-breakdown { display: flex; flex-direction: column; gap: 10px; }
 .score-row { display: flex; flex-direction: column; gap: 4px; }
-.score-label { display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--muted); }
+.score-label { display: flex; justify-content: space-between; font-size: 1.06rem; color: var(--muted); }
 .score-bar { height: 4px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden; }
 .score-fill { height: 100%; border-radius: 2px; transition: width .5s ease; }
 .fill-blue   { background: linear-gradient(90deg, var(--blue), var(--cyan)); }
@@ -477,7 +883,7 @@ select option { background: #1e293b; color: var(--text); }
 .inv-refresh-btn {
   background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.3);
   color: var(--blue2); border-radius: 6px; padding: 3px 10px;
-  font-size: 0.7rem; font-weight: 600; cursor: pointer; transition: all .2s;
+  font-size: 0.84rem; font-weight: 600; cursor: pointer; transition: all .2s;
 }
 .inv-refresh-btn:hover { background: rgba(59,130,246,0.3); }
 .inv-refresh-btn:disabled { opacity: 0.4; cursor: not-allowed; }
@@ -489,22 +895,22 @@ select option { background: #1e293b; color: var(--text); }
   background: rgba(255,255,255,0.04); border: 1px solid var(--border);
   border-radius: 8px; padding: 8px 10px; text-align: center;
 }
-.inv-stat-val { font-size: 1.1rem; font-weight: 800; line-height: 1; }
-.inv-stat-lbl { font-size: 0.67rem; color: var(--muted); margin-top: 3px; font-weight: 500; text-transform: uppercase; letter-spacing: .04em; }
+.inv-stat-val { font-size: 1.2rem; font-weight: 800; line-height: 1; }
+.inv-stat-lbl { font-size: 0.96rem; color: var(--muted); margin-top: 3px; font-weight: 500; text-transform: uppercase; letter-spacing: .04em; }
 .inv-stat-val.green { color: var(--emerald); }
 .inv-stat-val.rose  { color: var(--rose); }
 .inv-stat-val.cyan  { color: var(--cyan); }
 
 .inv-data-age {
   display: flex; justify-content: space-between;
-  font-size: 0.75rem; color: var(--muted);
+  font-size: 0.89rem; color: var(--muted);
   padding: 6px 8px; background: rgba(255,255,255,0.03);
   border-radius: 6px; margin-bottom: 10px;
 }
 .inv-data-age span:last-child { color: var(--subtle); }
 
 .inv-section-title {
-  font-size: 0.72rem; font-weight: 700; color: var(--subtle);
+  font-size: 0.86rem; font-weight: 700; color: var(--subtle);
   text-transform: uppercase; letter-spacing: .06em;
   margin: 10px 0 6px;
 }
@@ -514,14 +920,14 @@ select option { background: #1e293b; color: var(--text); }
   gap: 6px;
 }
 .inv-item:last-child { border-bottom: none; }
-.inv-item-name { font-size: 0.78rem; color: var(--text); line-height: 1.3; flex: 1; }
-.inv-item-sub  { font-size: 0.68rem; color: var(--muted); }
-.inv-item-price { font-size: 0.78rem; font-weight: 700; white-space: nowrap; }
+.inv-item-name { font-size: 1.06rem; color: var(--text); line-height: 1.3; flex: 1; }
+.inv-item-sub  { font-size: 0.96rem; color: var(--muted); }
+.inv-item-price { font-size: 1.06rem; font-weight: 700; white-space: nowrap; }
 .inv-item-price.drop  { color: var(--emerald); }
 .inv-item-price.removed { color: var(--rose); text-decoration: line-through; opacity:.7; }
-.inv-item-drop-arrow { font-size: 0.65rem; color: var(--emerald); }
+.inv-item-drop-arrow { font-size: 0.94rem; color: var(--emerald); }
 
-.inv-empty { font-size: 0.78rem; color: var(--muted); padding: 6px 0; }
+.inv-empty { font-size: 1.06rem; color: var(--muted); padding: 6px 0; }
 
 /* ══════════════════════════════════════════════════════
    FILTER PANELS (sidebar)
@@ -530,10 +936,10 @@ select option { background: #1e293b; color: var(--text); }
   display: flex; flex-wrap: wrap; gap: 5px;
 }
 .filter-chip {
-  font-family: 'Cinzel', serif;
+  font-family: 'Barlow Condensed', sans-serif;
   background: transparent; border: 1px solid var(--border);
-  border-radius: 4px; padding: 4px 11px; font-size: 0.68rem; color: var(--subtle);
-  cursor: pointer; transition: all .15s; user-select: none; letter-spacing: 0.06em;
+  border-radius: 4px; padding: 4px 11px; font-size: 0.96rem; color: var(--subtle);
+  cursor: pointer; transition: all .15s; user-select: none; letter-spacing: 0.02em;
 }
 .filter-chip:hover {
   border-color: var(--border-md); color: var(--text);
@@ -544,7 +950,7 @@ select option { background: #1e293b; color: var(--text); }
   color: var(--gold);
 }
 .filter-chip .chip-count {
-  font-size: 0.65rem; color: var(--muted); margin-left: 3px;
+  font-size: 0.94rem; color: var(--muted); margin-left: 3px;
 }
 .filter-chip.active .chip-count { color: rgba(96,165,250,0.7); }
 
@@ -552,8 +958,8 @@ select option { background: #1e293b; color: var(--text); }
   display: flex; align-items: center; justify-content: space-between;
   padding: 8px 0; cursor: pointer; user-select: none;
 }
-.filter-toggle-label { font-family: 'Cinzel', serif; font-size: 0.7rem; letter-spacing: 0.06em; color: var(--subtle); display: flex; align-items: center; gap: 6px; }
-.filter-toggle-count { font-family: 'Cinzel', serif; font-size: 0.68rem; color: var(--muted); letter-spacing: 0.04em; }
+.filter-toggle-label { font-family: 'Barlow Condensed', sans-serif; font-size: 0.84rem; letter-spacing: 0.02em; color: var(--subtle); display: flex; align-items: center; gap: 6px; }
+.filter-toggle-count { font-family: 'Barlow Condensed', sans-serif; font-size: 0.96rem; color: var(--muted); letter-spacing: 0.02em; }
 
 .toggle-switch {
   width: 36px; height: 20px; border-radius: 10px;
@@ -582,15 +988,15 @@ select option { background: #1e293b; color: var(--text); }
 }
 .mileage-range-labels {
   display: flex; justify-content: space-between;
-  font-family: 'Cinzel', serif; font-size: 0.58rem; letter-spacing: 0.08em; color: var(--muted);
+  font-family: 'Barlow Condensed', sans-serif; font-size: 0.84rem; letter-spacing: 0.03em; color: var(--muted);
 }
-.mileage-val { font-family: 'Cinzel', serif; font-size: 0.82rem; font-weight: 600; color: var(--blue2); text-align: center; letter-spacing: 0.04em; }
+.mileage-val { font-family: 'Barlow Condensed', sans-serif; font-size: 0.96rem; font-weight: 600; color: var(--blue2); text-align: center; letter-spacing: 0.02em; }
 
 .color-select {
-  font-family: 'Cinzel', serif; letter-spacing: 0.06em;
+  font-family: 'Barlow Condensed', sans-serif; letter-spacing: 0.02em;
   width: 100%; background: rgba(255,255,255,0.04);
   border: 1px solid var(--border); border-radius: var(--radius-sm);
-  color: var(--text); font-size: 0.72rem; padding: 8px 10px;
+  color: var(--text); font-size: 0.86rem; padding: 8px 10px;
   outline: none; cursor: pointer;
 }
 .color-select:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
@@ -608,8 +1014,8 @@ select option { background: #1e293b; color: var(--text); }
 .ai-input {
   flex: 1; background: rgba(139,92,246,0.06);
   border: 1px solid rgba(139,92,246,0.25); border-radius: var(--radius-sm);
-  color: var(--text); font-family: 'Inter', sans-serif;
-  font-size: 0.92rem; padding: 11px 14px; outline: none;
+  color: var(--text); font-family: 'Barlow', sans-serif;
+  font-size: 1.06rem; padding: 11px 14px; outline: none;
   transition: border-color .2s, box-shadow .2s;
 }
 .ai-input:focus {
@@ -673,10 +1079,10 @@ select option { background: #1e293b; color: var(--text); }
 .rec-pass       { background: rgba(160,80,96,0.1);   color: var(--rose);    border: 1px solid rgba(160,80,96,0.25); }
 
 .ai-headline {
-  font-size: 1.15rem; font-weight: 700; color: var(--text); line-height: 1.4;
+  font-size: 1.45rem; font-weight: 700; color: var(--text); line-height: 1.4;
 }
 .ai-section-title {
-  font-size: 0.7rem; font-weight: 700; color: var(--muted);
+  font-size: 0.84rem; font-weight: 700; color: var(--muted);
   text-transform: uppercase; letter-spacing: .08em; margin-bottom: 8px;
 }
 .ai-prose { font-size: 0.9rem; color: var(--subtle); line-height: 1.6; }
@@ -685,7 +1091,7 @@ select option { background: #1e293b; color: var(--text); }
 .ai-flag-list { display: flex; flex-direction: column; gap: 6px; }
 .ai-flag {
   display: flex; align-items: flex-start; gap: 8px;
-  font-size: 0.83rem; color: var(--subtle); line-height: 1.4;
+  font-size: 0.97rem; color: var(--subtle); line-height: 1.4;
 }
 .ai-flag-icon { flex-shrink: 0; font-size: 0.9rem; }
 
@@ -694,12 +1100,12 @@ select option { background: #1e293b; color: var(--text); }
   display: flex; align-items: flex-start; gap: 10px;
   background: rgba(245,158,11,0.07); border: 1px solid rgba(245,158,11,0.15);
   border-radius: 8px; padding: 10px 12px;
-  font-size: 0.83rem; color: var(--subtle); line-height: 1.4;
+  font-size: 0.97rem; color: var(--subtle); line-height: 1.4;
 }
 .ai-tip-num {
   flex-shrink: 0; width: 18px; height: 18px; border-radius: 50%;
   background: rgba(245,158,11,0.2); color: var(--gold);
-  font-size: 0.7rem; font-weight: 800;
+  font-size: 0.84rem; font-weight: 800;
   display: flex; align-items: center; justify-content: center;
 }
 .ai-bottom-line {
@@ -718,17 +1124,73 @@ select option { background: #1e293b; color: var(--text); }
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* Market Pulse sidebar card */
+/* Market Pulse banner */
 .pulse-text {
-  font-family: 'Cinzel', serif;
-  font-size: 0.78rem; color: var(--subtle); line-height: 1.9;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.06rem; color: var(--subtle); line-height: 1.75;
   white-space: pre-line; letter-spacing: 0.03em;
+}
+/* Insight cards */
+.pulse-insight-card {
+  padding: 10px 13px;
+  background: rgba(255,255,255,0.035);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 6px;
+}
+.pulse-insight-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.0rem; letter-spacing: .06em;
+  color: var(--muted); font-weight: 700;
+  margin-bottom: 6px; text-transform: uppercase;
+}
+.pulse-insight-text {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.02rem; color: var(--subtle);
+  line-height: 1.58; letter-spacing: .02em;
+}
+/* Verdict strip */
+.pulse-verdict {
+  padding: 10px 14px;
+  background: var(--gold-soft);
+  border: 1px solid rgba(196,162,83,0.28);
+  border-radius: 6px;
+  display: flex; align-items: baseline; gap: 12px;
+}
+.pulse-verdict-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.0rem; letter-spacing: .07em;
+  color: var(--gold); font-weight: 700;
+  text-transform: uppercase; flex-shrink: 0;
+}
+.pulse-verdict-text {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.04rem; color: #d4b870;
+  line-height: 1.55; letter-spacing: .02em;
+}
+/* ── Light-mode overrides ── */
+[data-theme="light"] .pulse-insight-card {
+  background: rgba(0,0,0,0.035);
+  border-color: rgba(0,0,0,0.09);
+}
+[data-theme="light"] .pulse-insight-label { color: #374151; }
+[data-theme="light"] .pulse-insight-text  { color: #111827; }
+[data-theme="light"] .pulse-verdict {
+  background: rgba(161,116,6,0.08);
+  border-color: rgba(161,116,6,0.22);
+}
+[data-theme="light"] .pulse-verdict-label { color: #92640a; }
+[data-theme="light"] .pulse-verdict-text  { color: #3d2800; }
+/* Collapse 3 pulse columns to 1 on narrow containers */
+@media (max-width: 900px) {
+  #pulse-body [style*="grid-template-columns"] {
+    grid-template-columns: 1fr !important;
+  }
 }
 .btn-pulse {
   width: 100%; margin-top: 10px; padding: 7px;
   background: transparent; border: 1px solid var(--border-md);
-  border-radius: 4px; color: var(--subtle); font-size: 0.7rem; font-weight: 500;
-  cursor: pointer; transition: all .2s; letter-spacing: 0.04em; text-transform: uppercase;
+  border-radius: 4px; color: var(--subtle); font-size: 0.84rem; font-weight: 500;
+  cursor: pointer; transition: all .2s; letter-spacing: 0.02em; text-transform: uppercase;
 }
 .btn-pulse:hover { border-color: var(--gold); color: var(--gold); background: var(--gold-soft); }
 .btn-pulse:disabled { opacity: 0.3; cursor: not-allowed; }
@@ -741,7 +1203,7 @@ select option { background: #1e293b; color: var(--text); }
 }
 .state-emoji { font-size: 3.5rem; margin-bottom: 16px; }
 .state-title { font-size: 1.2rem; font-weight: 700; color: var(--text); margin-bottom: 8px; }
-.state-sub   { font-family: 'Cinzel', serif; font-size: 0.82rem; letter-spacing: 0.05em; color: var(--muted); }
+.state-sub   { font-family: 'Barlow Condensed', sans-serif; font-size: 0.96rem; letter-spacing: 0.02em; color: var(--muted); }
 
 .skeleton { border-radius: var(--radius); overflow: hidden; }
 .skel-img  { height: 160px; background: linear-gradient(90deg, var(--bg3) 25%, var(--card) 50%, var(--bg3) 75%); background-size: 200%; animation: shimmer 1.4s infinite; }
@@ -761,7 +1223,7 @@ select option { background: #1e293b; color: var(--text); }
 .page-btn {
   background: var(--card); border: 1px solid var(--border);
   border-radius: 8px; color: var(--subtle); cursor: pointer;
-  font-size: 0.875rem; padding: 7px 14px; transition: all .15s;
+  font-size: 1.0rem; padding: 7px 14px; transition: all .15s;
 }
 .page-btn:hover { border-color: var(--blue); color: var(--blue2); }
 .page-btn.active { background: rgba(59,130,246,0.15); border-color: var(--blue); color: var(--blue2); font-weight: 700; }
@@ -787,10 +1249,10 @@ select option { background: #1e293b; color: var(--text); }
   display: flex; align-items: center; justify-content: space-between;
   backdrop-filter: blur(10px);
 }
-.modal-title { font-family: 'Cinzel', serif; font-size: 1rem; font-weight: 600; letter-spacing: 0.06em; }
+.modal-title { font-family: 'Barlow Condensed', sans-serif; font-size: 1.45rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
 .modal-close {
   background: rgba(255,255,255,0.06); border: none; border-radius: 8px;
-  color: var(--muted); cursor: pointer; font-size: 1.1rem; padding: 6px 10px;
+  color: var(--muted); cursor: pointer; font-size: 1.2rem; padding: 6px 10px;
   transition: all .15s;
 }
 .modal-close:hover { background: rgba(255,255,255,0.1); color: var(--text); }
@@ -798,8 +1260,8 @@ select option { background: #1e293b; color: var(--text); }
 
 .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .detail-item { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
-.detail-label { font-family: 'Cinzel', serif; font-size: 0.6rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
-.detail-value { font-size: 0.95rem; font-weight: 600; color: var(--text); }
+.detail-label { font-family: 'Barlow Condensed', sans-serif; font-size: 0.86rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.02em; margin-bottom: 4px; }
+.detail-value { font-size: 1.2rem; font-weight: 600; color: var(--text); }
 
 /* ══════════════════════════════════════════════════════
    BEST DEAL HIGHLIGHT
@@ -817,18 +1279,18 @@ select option { background: #1e293b; color: var(--text); }
   background: linear-gradient(90deg, var(--gold), rgba(196,162,83,0.1), transparent);
 }
 .bdb-eyebrow {
-  font-family: 'Cinzel', serif;
-  font-size: 0.55rem; font-weight: 600; letter-spacing: 0.18em;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.96rem; font-weight: 600; letter-spacing: 0.02em;
   text-transform: uppercase; color: var(--gold); margin-bottom: 3px;
 }
-.bdb-title { font-weight: 600; color: var(--text); font-size: 0.88rem; }
-.bdb-sub   { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+.bdb-title { font-weight: 600; color: var(--text); font-size: 1.02rem; }
+.bdb-sub   { font-size: 0.89rem; color: var(--muted); margin-top: 2px; }
 .bdb-price { margin-left: auto; text-align: right; }
 .bdb-price-val {
-  font-size: 1.1rem; font-weight: 600; color: var(--gold);
-  font-family: 'Cinzel', serif; letter-spacing: 0.04em;
+  font-size: 1.2rem; font-weight: 600; color: var(--gold);
+  font-family: 'Barlow Condensed', sans-serif; letter-spacing: 0.02em;
 }
-.bdb-savings   { font-size: 0.72rem; color: var(--emerald); font-weight: 500; margin-top: 2px; }
+.bdb-savings   { font-size: 0.86rem; color: var(--emerald); font-weight: 500; margin-top: 2px; }
 
 /* ══════════════════════════════════════════════════════
    API USAGE PANEL (bottom-right)
@@ -839,10 +1301,10 @@ select option { background: #1e293b; color: var(--text); }
   border-radius: 12px; padding: 12px 16px; min-width: 180px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.4);
 }
-.api-panel-title { font-family: 'Cinzel', serif; font-size: 0.6rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
+.api-panel-title { font-family: 'Barlow Condensed', sans-serif; font-size: 0.86rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.02em; margin-bottom: 8px; }
 .api-meter { height: 5px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden; margin-bottom: 6px; }
 .api-fill  { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--emerald), var(--blue)); transition: width .5s; }
-.api-text  { font-size: 0.78rem; color: var(--subtle); display: flex; justify-content: space-between; }
+.api-text  { font-size: 1.06rem; color: var(--subtle); display: flex; justify-content: space-between; }
 
 /* ══════════════════════════════════════════════════════
    ANIMATIONS
@@ -866,16 +1328,16 @@ select option { background: #1e293b; color: var(--text); }
   flex-shrink: 0;
 }
 .chat-header-title {
-  font-family: 'Cinzel', serif;
-  font-weight: 600; font-size: 0.9rem; color: var(--text);
-  letter-spacing: 0.08em;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700; font-size: 1rem; color: var(--text);
+  letter-spacing: 0.03em; text-transform: uppercase;
   display: flex; align-items: center; gap: 10px;
 }
 .chat-header-badge {
-  font-size: 0.55rem; font-weight: 600; color: var(--gold);
+  font-size: 0.96rem; font-weight: 600; color: var(--gold);
   background: var(--gold-soft); border: 1px solid rgba(196,162,83,0.25);
-  border-radius: 3px; padding: 2px 7px; letter-spacing: 0.12em; text-transform: uppercase;
-  font-family: 'Cinzel', serif;
+  border-radius: 3px; padding: 2px 7px; letter-spacing: 0.02em; text-transform: uppercase;
+  font-family: 'Barlow Condensed', sans-serif;
 }
 .chat-messages {
   flex: 1; overflow-y: auto; padding: 12px;
@@ -886,7 +1348,7 @@ select option { background: #1e293b; color: var(--text); }
 .chat-messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
 .chat-msg {
   padding: 9px 12px; border-radius: 8px;
-  font-size: 0.82rem; line-height: 1.55; animation: fadeIn .2s ease;
+  font-size: 0.96rem; line-height: 1.55; animation: fadeIn .2s ease;
 }
 .chat-msg-user {
   align-self: flex-end; max-width: 88%;
@@ -900,10 +1362,10 @@ select option { background: #1e293b; color: var(--text); }
 }
 .chat-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
 .chat-chip {
-  font-family: 'Cinzel', serif;
+  font-family: 'Barlow Condensed', sans-serif;
   background: transparent; border: 1px solid var(--border-md);
   border-radius: 3px; padding: 3px 8px;
-  font-size: 0.7rem; color: var(--subtle); cursor: pointer; transition: all .15s;
+  font-size: 0.84rem; color: var(--subtle); cursor: pointer; transition: all .15s;
   letter-spacing: 0.03em;
 }
 .chat-chip:hover {
@@ -913,7 +1375,7 @@ select option { background: #1e293b; color: var(--text); }
 .chat-tool-call {
   align-self: stretch;
   background: rgba(74,144,112,0.04); border: 1px solid rgba(74,144,112,0.12);
-  border-radius: 8px; overflow: hidden; font-size: 0.76rem; animation: fadeIn .2s ease;
+  border-radius: 8px; overflow: hidden; font-size: 0.90rem; animation: fadeIn .2s ease;
 }
 .tool-call-header {
   display: flex; align-items: center; gap: 7px;
@@ -922,25 +1384,26 @@ select option { background: #1e293b; color: var(--text); }
 }
 .tool-call-header:hover { background: rgba(74,144,112,0.05); }
 .tool-tag {
-  margin-left: auto; font-size: 0.6rem; color: var(--muted);
+  margin-left: auto; font-size: 0.86rem; color: var(--muted);
   background: rgba(255,255,255,0.04); border-radius: 4px; padding: 2px 6px; font-weight: 400;
-  letter-spacing: 0.06em; text-transform: uppercase;
+  letter-spacing: 0.02em; text-transform: uppercase;
 }
-.tool-toggle { font-size: 0.6rem; color: var(--muted); transition: transform .15s; margin-left: 2px; }
+.tool-toggle { font-size: 0.86rem; color: var(--muted); transition: transform .15s; margin-left: 2px; }
 .chat-tool-call.open .tool-toggle { transform: rotate(180deg); }
 .tool-call-body {
   display: none; padding: 0 11px 10px;
   flex-direction: column; gap: 6px;
   border-top: 1px solid rgba(74,144,112,0.1);
+  max-height: 340px; overflow-y: auto; scrollbar-width: thin;
 }
 .chat-tool-call.open .tool-call-body { display: flex; }
 .tool-io-label {
-  font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.12em;
+  font-size: 0.84rem; text-transform: uppercase; letter-spacing: 0.02em;
   color: var(--muted); margin-bottom: 3px; margin-top: 7px;
 }
 .tool-json {
   background: rgba(0,0,0,0.35); border-radius: 4px; padding: 8px;
-  font-family: 'Courier New', monospace; font-size: 0.68rem;
+  font-family: 'Courier New', monospace; font-size: 0.96rem;
   color: #86c4a8; overflow-x: auto; max-height: 130px; overflow-y: auto;
   scrollbar-width: thin; white-space: pre-wrap; word-break: break-word;
   margin: 0; border: 1px solid rgba(255,255,255,0.04);
@@ -948,7 +1411,7 @@ select option { background: #1e293b; color: var(--text); }
 /* Thinking animation */
 .chat-thinking {
   align-self: flex-start; display: flex; align-items: center; gap: 8px;
-  color: var(--muted); font-size: 0.75rem; padding: 8px 12px;
+  color: var(--muted); font-size: 0.89rem; padding: 8px 12px;
 }
 .thinking-dots { display: flex; gap: 5px; }
 .thinking-dots span {
@@ -968,8 +1431,8 @@ select option { background: #1e293b; color: var(--text); }
 }
 .chat-input {
   flex: 1; background: rgba(255,255,255,0.025); border: 1px solid var(--border-md);
-  border-radius: 8px; color: var(--text); font-family: 'Inter', sans-serif;
-  font-size: 0.82rem; padding: 9px 12px; outline: none; resize: none;
+  border-radius: 8px; color: var(--text); font-family: 'Barlow', sans-serif;
+  font-size: 0.96rem; padding: 9px 12px; outline: none; resize: none;
   min-height: 38px; max-height: 90px; transition: border-color .2s; scrollbar-width: none;
 }
 .chat-input:focus { border-color: var(--gold); box-shadow: 0 0 0 2px rgba(196,162,83,0.08); }
@@ -996,11 +1459,11 @@ select option { background: #1e293b; color: var(--text); }
 }
 .chat-history-toggle:hover { background: rgba(255,255,255,0.02); }
 .chat-history-label {
-  font-size: 0.6rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
+  font-size: 0.86rem; font-weight: 600; letter-spacing: 0.02em; text-transform: uppercase;
   color: var(--muted);
 }
 .chat-history-count {
-  font-size: 0.6rem; color: var(--gold); font-weight: 600;
+  font-size: 0.86rem; color: var(--gold); font-weight: 600;
   background: var(--gold-soft); border-radius: 8px; padding: 1px 7px;
 }
 .chat-history-panel {
@@ -1022,12 +1485,12 @@ select option { background: #1e293b; color: var(--text); }
   background: var(--gold-soft); border-color: rgba(196,162,83,0.2);
 }
 .chi-query {
-  flex: 1; font-size: 0.75rem; color: var(--subtle); overflow: hidden;
+  flex: 1; font-size: 0.89rem; color: var(--subtle); overflow: hidden;
   text-overflow: ellipsis; white-space: nowrap;
 }
 .chi-query.active-text { color: var(--gold); }
 .chi-meta {
-  font-size: 0.65rem; color: var(--muted); white-space: nowrap; flex-shrink: 0;
+  font-size: 0.94rem; color: var(--muted); white-space: nowrap; flex-shrink: 0;
 }
 
 /* Dealer name link */
@@ -1066,7 +1529,7 @@ a.dealer-link:hover { color: var(--gold); text-decoration: underline; }
 }
 .toast {
   background: var(--bg3); border: 1px solid var(--border-md);
-  border-radius: 6px; padding: 9px 18px; font-size: 0.78rem;
+  border-radius: 6px; padding: 9px 18px; font-size: 1.06rem;
   color: var(--subtle); box-shadow: 0 8px 32px rgba(0,0,0,0.5);
   animation: slideUp .3s ease; letter-spacing: 0.02em;
 }
@@ -1082,20 +1545,31 @@ a.dealer-link:hover { color: var(--gold); text-decoration: underline; }
     <div class="logo-mark">DR</div>
     <div class="logo-divider"></div>
     <span>DealRadar</span>
-    <span class="logo-sub">Auto Intelligence</span>
+    <span class="logo-sub">Find Your Best Deal</span>
   </a>
   <div class="header-right">
-    <div id="api-data-age" style="display:none;font-size:0.7rem;color:var(--muted);letter-spacing:0.04em"></div>
+    <div id="api-data-age" style="display:none;font-size:0.84rem;color:var(--muted);letter-spacing:0.04em"></div>
+
+    <!-- Light / Dark toggle -->
+    <label class="theme-toggle" title="Toggle light/dark mode">
+      <span class="theme-toggle-label" id="theme-label">Dark</span>
+      <div class="theme-switch">
+        <input type="checkbox" id="theme-checkbox" onchange="toggleTheme(this.checked)"/>
+        <span class="theme-slider"></span>
+      </div>
+      <span class="theme-toggle-label" id="theme-label-right" style="width:28px">Light</span>
+    </label>
+
     <div class="api-badge">
       <div class="api-dot"></div>
-      <span id="api-remaining">Live</span>
+      <span id="api-remaining">Live Pricing</span>
     </div>
   </div>
 </header>
 
 <!-- HERO (hidden — form inputs kept for JS compatibility) -->
 <section class="hero" style="display:none">
-  <div class="hero-eyebrow">🇺🇸 Live data from US dealers nationwide</div>
+  <div class="hero-eyebrow">Live data from US dealers nationwide</div>
   <h1>Find the Best<br/>Car Deal in America</h1>
   <p>AI-powered deal scoring across thousands of dealers. Search any make and model. We surface the best discounts, CPO deals, and hidden gems nationwide.</p>
 
@@ -1134,11 +1608,11 @@ a.dealer-link:hover { color: var(--gold); text-decoration: underline; }
         </select>
       </div>
       <button class="btn-search" id="btn-search" onclick="doSearch(1)">
-        <span id="btn-txt">🔍 Search</span>
+        <span id="btn-txt">Search</span>
       </button>
     </div>
     <div class="filters-row">
-      <span style="font-family:'Cinzel',serif;font-size:.68rem;color:var(--muted);font-weight:600;white-space:nowrap;letter-spacing:.1em">CONDITION</span>
+      <span style="font-family:'Barlow Condensed',sans-serif;font-size:.90rem;color:var(--muted);font-weight:600;white-space:nowrap;letter-spacing:.02em">CONDITION</span>
       <div class="chip-group" id="cond-chips">
         <div class="chip active" data-val="">All</div>
         <div class="chip" data-val="new">New</div>
@@ -1149,14 +1623,14 @@ a.dealer-link:hover { color: var(--gold); text-decoration: underline; }
 
     <!-- AI Natural Language Search -->
     <div class="ai-search-wrap">
-      <div style="font-size:.72rem;font-weight:700;color:#a78bfa;letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px">
-        ✨ Or describe what you want in plain English
+      <div style="font-size:.86rem;font-weight:700;color:#a78bfa;letter-spacing:.01em;text-transform:uppercase;margin-bottom:10px">
+        Or describe what you want in plain English
       </div>
       <div class="ai-search-row">
         <input class="ai-input" id="ai-input"
                placeholder="e.g. I want a white AWD luxury SUV under $55k with no accidents in Florida…"
                onkeydown="if(event.key==='Enter')doAiSearch()"/>
-        <button class="btn-ai-search" id="btn-ai" onclick="doAiSearch()">✨ Search</button>
+        <button class="btn-ai-search" id="btn-ai" onclick="doAiSearch()">Search</button>
       </div>
       <div class="ai-understanding" id="ai-understanding"></div>
     </div>
@@ -1168,6 +1642,14 @@ a.dealer-link:hover { color: var(--gold); text-decoration: underline; }
 
   <!-- SIDEBAR -->
   <aside class="sidebar">
+    <div class="sidebar-collapse-btn-wrap">
+      <button class="sidebar-collapse-btn" id="sidebar-collapse-btn" onclick="toggleSidebar()" title="Collapse filters">‹ Filters</button>
+    </div>
+
+    <!-- Clear All Filters -->
+    <div class="sidebar-card" id="clear-all-card" style="display:none">
+      <button onclick="clearAllFilters()" style="width:100%;background:rgba(160,80,96,0.08);border:1px solid rgba(160,80,96,0.25);border-radius:6px;color:var(--rose);font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:8px 12px;cursor:pointer;transition:all .15s;font-family:'Cinzel',serif" onmouseover="this.style.background='rgba(160,80,96,0.18)'" onmouseout="this.style.background='rgba(160,80,96,0.08)'">✕ Clear All Filters</button>
+    </div>
 
     <!-- Condition filter (mirrors hero chips, always in sync) -->
     <div class="sidebar-card">
@@ -1191,9 +1673,14 @@ a.dealer-link:hover { color: var(--gold); text-decoration: underline; }
     </div>
 
     <div class="sidebar-card">
-      <div class="sidebar-title">Max Price</div>
-      <input class="inp" id="max-price" type="number" placeholder="No limit" step="1000"
-             onchange="doSearch(1)"/>
+      <div class="sidebar-title">Price Range</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input class="inp" id="min-price" type="number" placeholder="Min $" style="flex:1;min-width:0" step="1000"
+               onchange="updateClearAllVisibility();doSearch(1)"/>
+        <span style="color:var(--muted);font-size:.84rem;flex-shrink:0">–</span>
+        <input class="inp" id="max-price" type="number" placeholder="Max $" style="flex:1;min-width:0" step="1000"
+               onchange="updateClearAllVisibility();doSearch(1)"/>
+      </div>
     </div>
 
     <!-- Location: Zip + Radius -->
@@ -1201,12 +1688,16 @@ a.dealer-link:hover { color: var(--gold); text-decoration: underline; }
       <div class="sidebar-title">Location</div>
       <div style="display:flex;flex-direction:column;gap:8px;">
         <div style="display:flex;gap:8px;align-items:center;">
-          <label for="zip-code" style="font-size:0.72rem;font-weight:600;color:var(--muted);letter-spacing:0.06em;flex-shrink:0">ZipCode</label>
-          <input class="inp" id="zip-code" type="text" placeholder="e.g. 94103" maxlength="5" pattern="\\d{5}" style="width:110px;min-width:80px;" onchange="doSearch(1)" aria-label="Zip code" />
+          <label for="zip-code" style="font-size:0.86rem;font-weight:600;color:var(--muted);letter-spacing:0.06em;flex-shrink:0">Zip</label>
+          <input class="inp" id="zip-code" type="text" placeholder="e.g. 94103" maxlength="5" pattern="\\d{5}" style="width:110px;min-width:80px;" onchange="updateClearAllVisibility();doSearch(1)" aria-label="Zip code" />
+          <button onclick="detectLocation()" id="btn-near-me" title="Auto-detect my location"
+            style="flex-shrink:0;padding:5px 8px;background:transparent;border:1px solid var(--border-md);border-radius:4px;color:var(--muted);cursor:pointer;font-size:.80rem;font-family:'Barlow Condensed',sans-serif;letter-spacing:.02em;transition:all .15s"
+            onmouseover="this.style.borderColor='var(--blue2)';this.style.color='var(--blue2)'"
+            onmouseout="this.style.borderColor='var(--border-md)';this.style.color='var(--muted)'">Near Me</button>
         </div>
         <div style="display:flex;gap:8px;align-items:center;">
-          <label for="radius-select" style="font-size:0.72rem;font-weight:600;color:var(--muted);letter-spacing:0.06em;flex-shrink:0">Radius</label>
-          <select id="radius-select" class="inp" style="width:110px;min-width:80px" onchange="doSearch(1)" aria-label="Search radius">
+          <label for="radius-select" style="font-size:0.86rem;font-weight:600;color:var(--muted);letter-spacing:0.06em;flex-shrink:0">Radius</label>
+          <select id="radius-select" class="inp" style="width:110px;min-width:80px" onchange="updateClearAllVisibility();doSearch(1)" aria-label="Search radius">
             <option value="">Any</option>
             <option value="10">10 mi</option>
             <option value="25">25 mi</option>
@@ -1229,7 +1720,7 @@ a.dealer-link:hover { color: var(--gold); text-decoration: underline; }
       <div class="mileage-range">
         <div class="mileage-val" id="mileage-val">Any</div>
         <input type="range" id="mileage-slider" min="0" max="100000" step="5000" value="100000"
-               oninput="updateMileageLabel(this.value)" onchange="doSearch(1)"/>
+               oninput="updateMileageLabel(this.value)" onchange="updateClearAllVisibility();doSearch(1)"/>
         <div class="mileage-range-labels">
           <span>0 mi</span><span id="mileage-max-label">100k mi</span>
         </div>
@@ -1242,17 +1733,30 @@ a.dealer-link:hover { color: var(--gold); text-decoration: underline; }
       <div class="mileage-range">
         <div class="mileage-val" id="year-val">Any</div>
         <input type="range" id="year-slider" min="2010" max="2025" step="1" value="2010"
-               oninput="updateYearLabel(this.value)" onchange="doSearch(1)"/>
+               oninput="updateYearLabel(this.value)" onchange="updateClearAllVisibility();doSearch(1)"/>
         <div class="mileage-range-labels">
           <span id="year-min-label">2010</span><span id="year-max-label">2025</span>
         </div>
       </div>
     </div>
 
+    <!-- Fuel Type -->
+    <div class="sidebar-card">
+      <div class="sidebar-title">Fuel Type</div>
+      <select class="color-select" id="fuel-type-select" onchange="updateClearAllVisibility();doSearch(1)">
+        <option value="">Any Fuel</option>
+        <option value="gas">Gas</option>
+        <option value="hybrid">Hybrid (HEV)</option>
+        <option value="electric">Electric (EV)</option>
+        <option value="phev">Plug-In Hybrid (PHEV)</option>
+        <option value="diesel">Diesel</option>
+      </select>
+    </div>
+
     <!-- Exterior Color -->
     <div class="sidebar-card" id="color-card" style="display:none">
       <div class="sidebar-title">Exterior Color</div>
-      <select class="color-select" id="color-select" onchange="doSearch(1)">
+      <select class="color-select" id="color-select" onchange="updateClearAllVisibility();doSearch(1)">
         <option value="">Any Color</option>
       </select>
     </div>
@@ -1261,7 +1765,7 @@ a.dealer-link:hover { color: var(--gold); text-decoration: underline; }
     <div class="sidebar-card" id="history-card" style="display:none">
       <div class="sidebar-title">Vehicle History</div>
       <div class="filter-toggle" onclick="toggleFilter('no-accidents')">
-        <div class="filter-toggle-label">No Accidents <span class="filter-toggle-count" id="no-acc-count"></span><span style="font-size:.7rem;color:var(--muted);font-weight:400;margin-left:4px">(dealer-reported)</span></div>
+        <div class="filter-toggle-label">No Accidents <span class="filter-toggle-count" id="no-acc-count"></span><span style="font-size:.92rem;color:var(--muted);font-weight:400;margin-left:4px">(dealer-reported)</span></div>
         <div class="toggle-switch" id="toggle-no-accidents"></div>
       </div>
       <div class="filter-toggle" onclick="toggleFilter('one-owner')">
@@ -1275,19 +1779,29 @@ a.dealer-link:hover { color: var(--gold); text-decoration: underline; }
       <div id="top-states-list" style="display:flex;flex-direction:column;gap:8px"></div>
     </div>
 
-    <!-- Market Pulse (AI) -->
-    <div class="sidebar-card" id="market-pulse-card" style="display:none">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-        <div class="sidebar-title" style="margin:0">Market Pulse</div>
-        <span style="font-family:'Cinzel',serif;font-size:.52rem;color:var(--gold);font-weight:600;letter-spacing:.14em;background:var(--gold-soft);border:1px solid rgba(196,162,83,0.2);border-radius:3px;padding:2px 6px">AI</span>
-      </div>
-      <div class="pulse-text" id="pulse-text">Loading insights…</div>
-      <button class="btn-pulse" id="btn-pulse" onclick="loadMarketPulse(true)">Refresh insights</button>
-    </div>
   </aside>
 
   <!-- MAIN RESULTS -->
   <main class="listings-main">
+
+    <!-- Market Pulse AI banner (shown after first search) -->
+    <div id="market-pulse-card" style="display:none;margin-bottom:10px;background:var(--card);border:1px solid rgba(196,162,83,0.18);border-radius:var(--radius);overflow:hidden">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;cursor:pointer;gap:12px" onclick="document.getElementById('pulse-body').style.display=document.getElementById('pulse-body').style.display==='none'?'block':'none';this.querySelector('.pulse-chevron').style.transform=document.getElementById('pulse-body').style.display==='none'?'rotate(0deg)':'rotate(180deg)'">
+        <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">
+          <span style="font-family:'Barlow Condensed',sans-serif;font-size:.84rem;color:var(--gold);font-weight:600;letter-spacing:.04em;background:var(--gold-soft);border:1px solid rgba(196,162,83,0.2);border-radius:3px;padding:2px 7px;flex-shrink:0">AI</span>
+          <span style="font-family:'Barlow Condensed',sans-serif;font-size:.96rem;font-weight:600;letter-spacing:.04em;color:var(--text);text-transform:uppercase;flex-shrink:0">Market Pulse</span>
+          <span id="pulse-summary-line" style="font-size:.88rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1"></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+          <button class="btn-pulse" id="btn-pulse" onclick="event.stopPropagation();loadMarketPulse(true)" style="padding:4px 10px;font-size:.80rem">↻ Refresh</button>
+          <span class="pulse-chevron" style="color:var(--muted);font-size:.80rem;transition:transform .2s;transform:rotate(180deg)">▼</span>
+        </div>
+      </div>
+      <div id="pulse-body" style="padding:0 14px 10px;border-top:1px solid rgba(196,162,83,0.1)">
+        <div class="pulse-text" id="pulse-text" style="margin-top:8px">Loading insights…</div>
+      </div>
+    </div>
+
     <!-- Stats bar (shown after first search) -->
     <div class="stats-bar" id="stats-bar" style="display:none">
       <div class="stat-pill">
@@ -1302,22 +1816,27 @@ a.dealer-link:hover { color: var(--gold); text-decoration: underline; }
       <div class="stat-pill">
         <div><div class="stat-label">Price Range</div><div class="stat-value" id="st-range">—</div></div>
       </div>
-      <div class="stat-pill" id="st-cache-pill" style="display:none">
-        <div><div class="stat-label">API Calls</div><div class="stat-value gold" id="st-cache">0</div></div>
-      </div>
+      <!-- API calls pill removed — internal metric -->
     </div>
     <div class="results-header">
       <span class="results-count" id="results-count-label"></span>
-      <div id="freshness-bar" style="display:none;align-items:center;gap:10px">
-        <span id="freshness-label" style="font-size:.75rem;color:var(--muted)"></span>
-        <button class="inv-refresh-btn" id="inv-refresh-btn" onclick="forceRefresh()">↻ Refresh data</button>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <div id="freshness-bar" style="display:none;align-items:center;gap:10px">
+          <span id="freshness-label" style="font-size:.90rem;color:var(--muted)"></span>
+          <button class="inv-refresh-btn" id="inv-refresh-btn" onclick="forceRefresh()">↻ Refresh data</button>
+        </div>
+        <div class="view-toggle" id="view-toggle" style="display:none">
+          <button class="view-btn active" id="btn-view-grid" onclick="switchView('grid')">Grid</button>
+          <button class="view-btn" id="btn-view-map"  onclick="switchView('map')">Map</button>
+        </div>
       </div>
     </div>
     <div id="best-deal-wrap"></div>
+    <div id="map-container"></div>
     <div class="results-grid" id="results-grid">
       <!-- Initial empty state — replaced by results after chat search -->
       <div class="state-wrap" id="initial-empty-state" style="grid-column:1/-1">
-        <div class="state-title" style="font-family:'Cinzel',serif;font-size:1.25rem;font-weight:600;margin-bottom:12px;letter-spacing:0.1em">Begin with the Concierge</div>
+        <div class="state-title" style="font-family:'Barlow Condensed',sans-serif;font-size:1.25rem;font-weight:600;margin-bottom:12px;letter-spacing:0.03em">Begin with the Concierge</div>
         <div class="state-sub">Describe the car you're looking for in the chat panel</div>
       </div>
     </div>
@@ -1334,7 +1853,7 @@ a.dealer-link:hover { color: var(--gold); text-decoration: underline; }
     </div>
     <div class="chat-messages" id="chat-messages">
       <div class="chat-msg chat-msg-ai">
-        <span style="font-family:'Cinzel',serif;font-size:.78rem;line-height:1.9;letter-spacing:.03em;display:block;margin-bottom:10px">Tell me what you are looking for: make, budget, features, location. I will surface the best deals available. You can also ask general car questions.</span>
+        <span style="font-family:'Barlow Condensed',sans-serif;font-size:.92rem;line-height:1.9;letter-spacing:.01em;display:block;margin-bottom:10px">Tell me what you are looking for: make, budget, features, location. I will surface the best deals available. You can also ask general car questions.</span>
         <div class="chat-chips">
           <span class="chat-chip" onclick="prefillChat('CPO Porsche Cayenne under $75k, no accidents')">CPO Porsche Cayenne</span>
           <span class="chat-chip" onclick="prefillChat('Genesis GV80 AWD under $55k in the Southeast')">Genesis GV80 · Southeast</span>
@@ -1364,7 +1883,7 @@ a.dealer-link:hover { color: var(--gold); text-decoration: underline; }
   <div class="ai-modal">
     <div class="ai-modal-header">
       <div>
-        <div style="font-size:.58rem;font-weight:600;color:var(--gold);letter-spacing:.14em;text-transform:uppercase;margin-bottom:4px">AI Deal Analysis</div>
+        <div style="font-size:.88rem;font-weight:600;color:var(--gold);letter-spacing:.04em;text-transform:uppercase;margin-bottom:4px">AI Deal Analysis</div>
         <div class="modal-title" id="ai-modal-title">Analyzing…</div>
       </div>
       <button class="modal-close" onclick="closeAiModal()">✕</button>
@@ -1373,7 +1892,7 @@ a.dealer-link:hover { color: var(--gold); text-decoration: underline; }
       <div class="ai-loading">
         <div class="ai-spinner"></div>
         <div>Analyzing deal vs market…</div>
-        <div style="font-size:.78rem;margin-top:6px;color:var(--muted)">Comparing price, history & negotiation leverage</div>
+        <div style="font-size:.92rem;margin-top:6px;color:var(--muted)">Comparing price, history & negotiation leverage</div>
       </div>
     </div>
   </div>
@@ -1393,13 +1912,121 @@ a.dealer-link:hover { color: var(--gold); text-decoration: underline; }
 <!-- Toast -->
 <div class="toast-wrap" id="toasts"></div>
 
+<!-- COMPARE TRAY -->
+<div id="compare-tray">
+  <span class="compare-tray-label">Compare</span>
+  <div class="compare-tray-cars" id="compare-tray-cars"></div>
+  <button class="btn-clear-compare" onclick="clearCompare()">✕ Clear</button>
+  <button class="btn-compare-now" id="btn-compare-now" onclick="openCompareModal()">Compare Now</button>
+</div>
+
+<!-- COMPARISON MODAL -->
+<div id="compare-modal" onclick="if(event.target===this)closeCompareModal()">
+  <div class="compare-modal-inner">
+    <div class="compare-modal-header">
+      <div class="compare-modal-title">Side-by-Side Comparison</div>
+      <button class="compare-modal-close" onclick="closeCompareModal()">✕</button>
+    </div>
+    <div class="compare-table-wrap">
+      <table class="compare-table" id="compare-table-el"></table>
+    </div>
+  </div>
+</div>
+
 <script>
 const API = window.location.hostname === 'localhost' ? 'http://localhost:8000' : '';
 let currentPage = 1, currentSort = 'score', currentCond = '', lastResults = [];
 let currentDrivetrain = '', filterNoAccidents = false, filterOneOwner = false;
 
+// ─── Near Me geolocation ─────────────────────────────────────
+async function detectLocation() {
+  const btn = document.getElementById('btn-near-me');
+  if(!navigator.geolocation) { toast('Geolocation not supported by your browser'); return; }
+  btn.textContent = '…';
+  btn.disabled = true;
+  navigator.geolocation.getCurrentPosition(async pos => {
+    try {
+      const { latitude: lat, longitude: lng } = pos.coords;
+      // Use nominatim reverse geocode (free, no key required)
+      const resp = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10`, {
+        headers: { 'Accept-Language': 'en' }
+      });
+      const data = await resp.json();
+      const zip = data?.address?.postcode?.split('-')[0];
+      if(zip && /^\d{5}$/.test(zip)) {
+        document.getElementById('zip-code').value = zip;
+        // Set a sensible default radius if none chosen
+        const radSel = document.getElementById('radius-select');
+        if(radSel && !radSel.value) radSel.value = '50';
+        toast(`Location set: ${zip}`);
+        if(document.getElementById('inp-make')?.value) doSearch(1);
+      } else {
+        toast('Could not determine ZIP from your location');
+      }
+    } catch(e) {
+      toast('Location lookup failed');
+    } finally {
+      btn.textContent = 'Near Me';
+      btn.disabled = false;
+    }
+  }, () => {
+    toast('Location access denied');
+    btn.textContent = 'Near Me';
+    btn.disabled = false;
+  });
+}
+
+// ─── Close card link dropdowns when clicking outside ─────────
+document.addEventListener('click', () => {
+  document.querySelectorAll('.card-links-wrap.open').forEach(el => el.classList.remove('open'));
+});
+
+// ─── Sidebar collapse ────────────────────────────────────────
+function toggleSidebar() {
+  const layout = document.getElementById('results-layout');
+  const btn    = document.getElementById('sidebar-collapse-btn');
+  const collapsed = layout.classList.toggle('sidebar-collapsed');
+  btn.textContent = collapsed ? '›' : '‹ Filters';
+  btn.title = collapsed ? 'Expand filters' : 'Collapse filters';
+}
+
+// ─── Theme ──────────────────────────────────────────────────
+function toggleTheme(isLight) {
+  document.documentElement.setAttribute('data-theme', isLight ? 'light' : 'dark');
+  document.getElementById('theme-label').textContent = isLight ? 'Light' : 'Dark';
+  try { localStorage.setItem('dr-theme', isLight ? 'light' : 'dark'); } catch(e) {}
+  // Re-render map tiles if active (tiles change for light/dark)
+  if(mapInstance) {
+    mapInstance.eachLayer(l => { if(l._url) mapInstance.removeLayer(l); });
+    const tile = isLight
+      ? 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
+      : 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+    L.tileLayer(tile, { attribution: '© OpenStreetMap © CARTO', subdomains: 'abcd', maxZoom: 19 }).addTo(mapInstance);
+  }
+}
+
+// Apply saved theme on load
+(function() {
+  let saved = 'dark';
+  try { saved = localStorage.getItem('dr-theme') || 'dark'; } catch(e) {}
+  if(saved === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+    // Checkbox will be ticked by the init block below after DOM ready
+  }
+})();
+
 // ─── Init ──────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
+  // Sync theme checkbox with saved preference
+  try {
+    const saved = localStorage.getItem('dr-theme') || 'dark';
+    const cb = document.getElementById('theme-checkbox');
+    if(cb && saved === 'light') {
+      cb.checked = true;
+      document.getElementById('theme-label').textContent = 'Light';
+    }
+  } catch(e) {}
+
   loadMakes();
   updateUsage();
   // Restore persisted search history from localStorage
@@ -1425,13 +2052,7 @@ async function loadMakes() {
 }
 
 async function updateUsage() {
-  try {
-    const r = await fetch(`${API}/api/usage`);
-    const d = await r.json();
-    const used = d.total_used, rem = d.remaining;
-    const el = document.getElementById('api-remaining');
-    if(el) el.textContent = `${rem} calls left`;
-  } catch(e) {}
+  // Usage counter removed — internal metric, not user-facing
 }
 
 // ─── Search ──────────────────────────────────────────────────
@@ -1449,9 +2070,11 @@ async function doSearch(page = 1) {
   const year = document.getElementById('inp-year').value;
   const state = document.getElementById('inp-state').value;
   const maxPrice = document.getElementById('max-price').value;
+  const minPrice = document.getElementById('min-price')?.value;
   if(year)     params.set('year', year);
   if(state)    params.set('state', state);
   if(maxPrice) params.set('max_price', maxPrice);
+  if(minPrice) params.set('min_price', minPrice);
   if(currentCond) params.set('condition', currentCond);
   if(currentDrivetrain) params.set('drivetrain', currentDrivetrain);
   const mileageVal = document.getElementById('mileage-slider')?.value;
@@ -1464,10 +2087,14 @@ async function doSearch(page = 1) {
   // Zip code and search radius
   const zip = document.getElementById('zip-code')?.value.trim();
   const radius = document.getElementById('radius-select')?.value;
-  if(zip)    params.set('zip', zip);
-  if(radius) params.set('radius', radius);
+  if(zip)    params.set('zip_code', zip);
+  if(radius) params.set('radius_miles', radius);
   if(filterNoAccidents) params.set('no_accidents', 'true');
   if(filterOneOwner)    params.set('one_owner', 'true');
+  const bodyStyle = document.getElementById('body-style-select')?.value;
+  if(bodyStyle) params.set('body_style', bodyStyle);
+  const fuelType = document.getElementById('fuel-type-select')?.value;
+  if(fuelType) params.set('fuel_type', fuelType);
 
   try {
     const r = await fetch(`${API}/api/search?${params}`);
@@ -1478,7 +2105,7 @@ async function doSearch(page = 1) {
     updateUsage();
     updateInventoryHealth(make, model, year, state);
     loadFilters(make, model, year, state);
-    if(!d.cached) toast(`Live data · ${d.api_calls_used} API call${d.api_calls_used!==1?'s':''} used`);
+    if(!d.cached) toast('Live data — just synced from dealers');
     loadMarketPulse();
   } catch(e) {
     showError(e.message);
@@ -1633,6 +2260,7 @@ function setSidebarCond(el, val) {
   // Sync hero chips
   document.querySelectorAll('#cond-chips .chip').forEach(c =>
     c.classList.toggle('active', c.dataset.val === val));
+  updateClearAllVisibility();
   if(hasSearchContext()) doSearch(1);
 }
 
@@ -1641,6 +2269,7 @@ function setDrivetrain(dt) {
   document.querySelectorAll('#drivetrain-chips .filter-chip').forEach(c => {
     c.classList.toggle('active', (dt === '' && c.textContent === 'All') || c.textContent === dt);
   });
+  updateClearAllVisibility();
   doSearch(1);
 }
 
@@ -1666,6 +2295,7 @@ function toggleFilter(name) {
     filterOneOwner = !filterOneOwner;
     document.getElementById('toggle-one-owner').className = 'toggle-switch' + (filterOneOwner ? ' on' : '');
   }
+  updateClearAllVisibility();
   doSearch(1);
 }
 
@@ -1674,6 +2304,53 @@ function setSort(sort, btn) {
   document.querySelectorAll('.sort-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   if(hasSearchContext()) doSearch(currentPage);
+}
+
+function updateClearAllVisibility() {
+  const card = document.getElementById('clear-all-card');
+  if(!card) return;
+  const maxPrice  = document.getElementById('max-price')?.value;
+  const mileage   = document.getElementById('mileage-slider');
+  const yearSlider= document.getElementById('year-slider');
+  const color     = document.getElementById('color-select')?.value;
+  const fuelType  = document.getElementById('fuel-type-select')?.value;
+  const zip       = document.getElementById('zip-code')?.value?.trim();
+  const mileageActive = mileage && parseInt(mileage.value) < parseInt(mileage.max);
+  const yearActive    = yearSlider && parseInt(yearSlider.value) > parseInt(yearSlider.min);
+  const hasActiveFilter = currentCond || currentDrivetrain || filterNoAccidents || filterOneOwner
+    || maxPrice || mileageActive || yearActive || color || fuelType || zip;
+  card.style.display = hasActiveFilter ? '' : 'none';
+}
+
+function clearAllFilters() {
+  // Condition
+  currentCond = '';
+  document.querySelectorAll('#sidebar-cond-chips .filter-chip').forEach(c => c.classList.toggle('active', c.dataset.val === ''));
+  document.querySelectorAll('#cond-chips .chip').forEach(c => c.classList.toggle('active', c.dataset.val === ''));
+  // Drivetrain
+  currentDrivetrain = '';
+  document.querySelectorAll('#drivetrain-chips .filter-chip').forEach(c => c.classList.toggle('active', c.textContent.trim() === 'All'));
+  // Toggles
+  filterNoAccidents = false; filterOneOwner = false;
+  document.getElementById('toggle-no-accidents').className = 'toggle-switch';
+  document.getElementById('toggle-one-owner').className    = 'toggle-switch';
+  // Price
+  const mp = document.getElementById('max-price'); if(mp) mp.value = '';
+  // Mileage slider
+  const ms = document.getElementById('mileage-slider');
+  if(ms) { ms.value = ms.max; updateMileageLabel(ms.value); }
+  // Year slider
+  const ys = document.getElementById('year-slider');
+  if(ys) { ys.value = ys.min; updateYearLabel(ys.value); }
+  // Color
+  const cs = document.getElementById('color-select'); if(cs) cs.value = '';
+  // Fuel type
+  const fs = document.getElementById('fuel-type-select'); if(fs) fs.value = '';
+  // Zip / radius
+  const zc = document.getElementById('zip-code');       if(zc) zc.value = '';
+  const rs = document.getElementById('radius-select');  if(rs) rs.value = '';
+  updateClearAllVisibility();
+  if(hasSearchContext()) doSearch(1);
 }
 
 // ─── Render ──────────────────────────────────────────────────
@@ -1694,23 +2371,20 @@ function renderResults(data, make, model) {
   if(stats.min_price && stats.max_price)
     document.getElementById('st-range').textContent = '$'+stats.min_price.toLocaleString()+' – $'+stats.max_price.toLocaleString();
 
-  const cachePill = document.getElementById('st-cache-pill');
-  cachePill.style.display = 'flex';
-  document.getElementById('st-cache').textContent = data.cached ? '0 (cached ✓)' : data.api_calls_used + ' (fresh)';
-  document.getElementById('st-cache').style.color = data.cached ? 'var(--emerald)' : 'var(--gold)';
+  // (API calls pill removed)
 
   // Top states
   if(stats.top_states && stats.top_states.length) {
     const stCard = document.getElementById('top-states-card');
     stCard.style.display = 'block';
     const stList = document.getElementById('top-states-list');
-    stList.innerHTML = stats.top_states.map(([st,cnt]) => `
+    stList.innerHTML = stats.top_states.filter(([st]) => st && st !== 'null' && st !== 'undefined' && st.trim() !== '').map(([st,cnt]) => `
       <div style="display:flex;align-items:center;gap:10px">
-        <span style="font-family:'Cinzel',serif;font-weight:600;color:var(--text);font-size:.68rem;letter-spacing:.08em;width:24px">${st}</span>
+        <span style="font-family:'Barlow Condensed',sans-serif;font-weight:600;color:var(--text);font-size:.90rem;letter-spacing:.01em;width:24px">${st}</span>
         <div style="flex:1;height:4px;background:rgba(255,255,255,.06);border-radius:2px">
           <div style="height:100%;border-radius:2px;background:linear-gradient(90deg,var(--blue),var(--cyan));width:${cnt/stats.top_states[0][1]*100}%"></div>
         </div>
-        <span style="font-family:'Cinzel',serif;font-size:.7rem;font-weight:600;color:var(--muted);letter-spacing:.04em">${cnt}</span>
+        <span style="font-family:'Barlow Condensed',sans-serif;font-size:.92rem;font-weight:600;color:var(--muted);letter-spacing:.02em">${cnt}</span>
       </div>
     `).join('');
   }
@@ -1739,13 +2413,19 @@ function renderResults(data, make, model) {
       </div>`;
   } else { bdWrap.innerHTML=''; }
 
+  // Show view toggle whenever we have results
+  document.getElementById('view-toggle').style.display = results.length ? 'flex' : 'none';
+
   // Cards
   const grid = document.getElementById('results-grid');
   if(!results.length) {
-    grid.innerHTML = `<div class="state-wrap"><div class="state-emoji">🔍</div><div class="state-title">No results found</div><div class="state-sub">Try widening your filters or a different year</div></div>`;
+    grid.innerHTML = `<div class="state-wrap"><div class="state-title">No results found</div><div class="state-sub">Try widening your filters or a different year</div></div>`;
   } else {
     grid.innerHTML = results.map((r,i) => dealCard(r, i)).join('');
   }
+
+  // If map view is active, re-render with fresh data
+  if(currentView === 'map') renderMap(results);
 
   // Pagination
   renderPagination(page, pages);
@@ -1769,10 +2449,10 @@ function dealCard(r, idx) {
 
   const badges = [];
   // Title brand warnings always go first — most critical info
-  if(isSalvage)  badges.push('<span class="badge badge-salvage">⚠ Salvage Title</span>');
+  if(isSalvage)  badges.push('<span class="badge badge-salvage">Salvage Title</span>');
   else if(isRebuilt) badges.push('<span class="badge badge-rebuilt">Rebuilt Title</span>');
-  else if(titleBrand === 'lemon') badges.push('<span class="badge badge-salvage">⚠ Lemon Law</span>');
-  else if(titleBrand === 'flood') badges.push('<span class="badge badge-salvage">⚠ Flood</span>');
+  else if(titleBrand === 'lemon') badges.push('<span class="badge badge-salvage">Lemon Law</span>');
+  else if(titleBrand === 'flood') badges.push('<span class="badge badge-salvage">Flood</span>');
 
   if(r.is_cpo) badges.push('<span class="badge badge-cpo">CPO</span>');
   else if(!r.is_used) badges.push('<span class="badge badge-new">New</span>');
@@ -1796,33 +2476,37 @@ function dealCard(r, idx) {
   if(r.mileage) metas.push(`<span class="meta-tag">${r.mileage.toLocaleString()} mi</span>`);
   if(r.drivetrain) metas.push(`<span class="meta-tag">${r.drivetrain}</span>`);
   if(r.exterior_color) metas.push(`<span class="meta-tag">${r.exterior_color}</span>`);
-  if(r.accidents !== undefined && r.accidents === 0) metas.push(`<span class="meta-tag" style="color:var(--gold);border-color:rgba(196,162,83,0.25)" title="Dealer-reported only — always verify with an independent CARFAX or AutoCheck report">0 reported ⚠</span>`);
+  if(r.accidents !== undefined && r.accidents === 0) metas.push(`<span class="meta-tag" style="color:var(--gold);border-color:rgba(196,162,83,0.25)" title="Dealer-reported only — always verify with an independent CARFAX or AutoCheck report">0 reported*</span>`);
   if(r.one_owner) metas.push(`<span class="meta-tag" style="color:var(--emerald);border-color:rgba(74,144,112,0.2)">Single owner</span>`);
+  if(r.first_seen_at) {
+    const daysOnLot = Math.floor((Date.now()/1000 - r.first_seen_at) / 86400);
+    if(daysOnLot >= 1) {
+      const dotStyle = daysOnLot > 60
+        ? 'color:var(--emerald);border-color:rgba(74,144,112,0.28)'
+        : daysOnLot > 30 ? 'color:var(--gold);border-color:rgba(196,162,83,0.25)' : '';
+      const dotTip = daysOnLot > 60
+        ? `${daysOnLot}d on lot — seller may be motivated to negotiate`
+        : daysOnLot > 30 ? `${daysOnLot}d on lot — been listed a while` : `${daysOnLot}d on lot`;
+      metas.push(`<span class="meta-tag" style="${dotStyle}" title="${dotTip}">${daysOnLot}d on lot</span>`);
+    }
+  }
 
-  const carfaxBtn = r.carfax_url
-    ? `<a class="btn-carfax" href="${r.carfax_url}" target="_blank" onclick="event.stopPropagation()"
-         style="${r.accidents === 0 ? 'border-color:rgba(196,162,83,0.5);color:var(--gold)' : ''}"
-         title="${r.accidents === 0 ? 'Dealer reports 0 accidents — verify independently' : 'View CARFAX report'}">Carfax${r.accidents === 0 ? ' ⚠' : ''}</a>`
-    : '';
+  // Build links dropdown items
   const isDirectDealer = r.listing_url && !r.listing_url.includes('auto.dev');
-  const dealerBtn = isDirectDealer
-    ? `<a class="btn-carfax" href="${r.listing_url}" target="_blank"
-         onclick="event.stopPropagation()"
-         title="View full listing on dealer website">Dealer</a>`
-    : r.listing_url
-      ? `<a class="btn-carfax" href="${r.listing_url}" target="_blank"
-           onclick="event.stopPropagation()"
-           title="View photos &amp; details">Photos</a>`
-      : '';
-  const vinSearchBtn = r.vin
-    ? `<a class="btn-carfax" href="https://www.google.com/search?q=${r.vin}" target="_blank"
-         onclick="event.stopPropagation()"
-         title="Search VIN: find on dealer site, CarGurus, AutoTrader">VIN Search</a>`
+  const linkItems = [];
+  if(r.listing_url) linkItems.push(`<a class="card-link-item" href="${r.listing_url}" target="_blank" onclick="event.stopPropagation()">${isDirectDealer ? 'View at Dealer' : 'Photos'}</a>`);
+  if(r.carfax_url)  linkItems.push(`<a class="card-link-item${r.accidents===0?' card-link-item--gold':''}" href="${r.carfax_url}" target="_blank" onclick="event.stopPropagation()">Carfax Report${r.accidents===0?' ✓':''}</a>`);
+  if(r.vin)         linkItems.push(`<a class="card-link-item" href="https://www.google.com/search?q=${r.vin}" target="_blank" onclick="event.stopPropagation()">Search VIN</a>`);
+  const linksDropdown = linkItems.length
+    ? `<div class="card-links-wrap" onclick="event.stopPropagation()">
+         <button class="btn-carfax card-links-toggle" onclick="this.closest('.card-links-wrap').classList.toggle('open')">Links ▾</button>
+         <div class="card-links-menu">${linkItems.join('')}</div>
+       </div>`
     : '';
-  const aiBtn = `<button class="btn-detail" onclick="event.stopPropagation();openAiAnalysis('${r.vin}', ${idx})">AI Analysis</button>`;
+  const aiBtn = `<button class="btn-ai-analysis" onclick="event.stopPropagation();openAiAnalysis('${r.vin}', ${idx})">AI Analysis</button>`;
 
   return `
-  <div class="deal-card" onclick="openModal(${idx})" style="animation-delay:${idx*0.04}s">
+  <div class="deal-card${compareMap.has(r.vin) ? ' in-compare' : ''}" data-vin="${r.vin||''}" onclick="openModal(${idx})" style="animation-delay:${idx*0.04}s">
     <div class="card-img-wrap">
       ${img}
       <div class="card-badges">${badges.join('')}</div>
@@ -1848,6 +2532,7 @@ function dealCard(r, idx) {
       </div>
       ${savings}
       <div class="card-meta">${metas.join('')}</div>
+      ${r.accidents === 0 ? `<div style="font-size:.78rem;color:var(--muted);margin-top:3px;letter-spacing:.01em">* Accident data is dealer-reported — verify with CARFAX</div>` : ''}
       <div class="card-dealer">
         <svg width="10" height="12" viewBox="0 0 10 12" fill="none" style="flex-shrink:0;opacity:0.4;margin-top:2px"><path d="M5 0C2.24 0 0 2.24 0 5c0 3.75 5 7 5 7s5-3.25 5-7c0-2.76-2.24-5-5-5zm0 6.5A1.5 1.5 0 1 1 5 3.5a1.5 1.5 0 0 1 0 3z" fill="currentColor"/></svg>
         <div>
@@ -1859,16 +2544,19 @@ function dealCard(r, idx) {
                 : (r.dealer_name||'Unknown Dealer')
             }
           </div>
-          <div style="font-size:.72rem;color:var(--muted)">${r.dealer_city||''}, ${r.dealer_state||''}</div>
+          <div style="font-size:.86rem;color:var(--muted)">
+            ${r.dealer_city||''}, ${r.dealer_state||''}${r.distance_miles != null ? ` <span style="color:var(--blue2);font-weight:600">${Math.round(r.distance_miles)} mi away</span>` : ''}
+          </div>
         </div>
       </div>
     </div>
     <div class="card-actions">
-      ${dealerBtn}
-      ${vinSearchBtn}
-      ${carfaxBtn}
-      ${aiBtn}
-      <button class="btn-detail" onclick="event.stopPropagation();openModal(${idx})">📄 Details</button>
+      <div class="card-actions-row">
+        ${aiBtn}
+        <button class="btn-detail" onclick="event.stopPropagation();openModal(${idx})">Details</button>
+        ${linksDropdown}
+      </div>
+      <button class="btn-compare${compareMap.has(r.vin) ? ' comparing' : ''}" onclick="toggleCompare('${r.vin}',${idx},event)">${compareMap.has(r.vin) ? 'Comparing — click to remove' : 'Add to Compare'}</button>
     </div>
   </div>`;
 }
@@ -1897,7 +2585,7 @@ function openModal(idx) {
     ['Dealer', r.dealer_name||'—'],
     ['Location', `${r.dealer_city||''}, ${r.dealer_state||''} ${r.dealer_zip||''}`],
     ['Accidents', r.accidents != null
-      ? `${r.accidents} dealer-reported <span style="color:var(--gold);font-size:.75rem" title="Dealer-reported figures may not match CARFAX or AutoCheck. Always pull an independent vehicle history report before purchasing.">⚠ verify with CARFAX</span>`
+      ? `${r.accidents} dealer-reported <span style="color:var(--gold);font-size:.90rem" title="Dealer-reported figures may not match CARFAX or AutoCheck. Always pull an independent vehicle history report before purchasing.">— verify with CARFAX</span>`
       : '—'],
     ['Owners', r.one_owner ? '1 owner' : r.usage_type||'—'],
     ['Deal Score', ((r.score||0)*100).toFixed(0)+'/100'],
@@ -1910,14 +2598,14 @@ function openModal(idx) {
   ];
 
   const carfaxLink = r.carfax_url
-    ? `<a href="${r.carfax_url}" target="_blank" style="display:block;padding:9px 14px;background:rgba(74,144,112,.08);border:1px solid rgba(74,144,112,.18);border-radius:6px;color:var(--emerald);font-weight:500;font-size:.8rem;text-decoration:none;text-align:center;letter-spacing:.03em">View Full Carfax Report</a>`
+    ? `<a href="${r.carfax_url}" target="_blank" style="display:block;padding:9px 14px;background:rgba(74,144,112,.08);border:1px solid rgba(74,144,112,.18);border-radius:6px;color:var(--emerald);font-weight:500;font-size:.8rem;text-decoration:none;text-align:center;letter-spacing:.01em">View Full Carfax Report</a>`
     : '';
   const isModalDirectDealer = r.listing_url && !r.listing_url.includes('auto.dev');
   const dealerLink = r.listing_url
-    ? `<a href="${r.listing_url}" target="_blank" style="display:block;padding:9px 14px;background:var(--gold-soft);border:1px solid rgba(196,162,83,.2);border-radius:6px;color:var(--gold);font-weight:500;font-size:.8rem;text-decoration:none;text-align:center;letter-spacing:.03em">${isModalDirectDealer ? 'View Full Listing at Dealer Website' : 'View Photos on auto.dev'}</a>`
+    ? `<a href="${r.listing_url}" target="_blank" style="display:block;padding:9px 14px;background:var(--gold-soft);border:1px solid rgba(196,162,83,.2);border-radius:6px;color:var(--gold);font-weight:500;font-size:.8rem;text-decoration:none;text-align:center;letter-spacing:.01em">${isModalDirectDealer ? 'View Full Listing at Dealer Website' : 'View Photos on auto.dev'}</a>`
     : '';
   const vinSearchLink = r.vin
-    ? `<a href="https://www.google.com/search?q=${r.vin}" target="_blank" style="display:block;padding:9px 14px;background:rgba(74,122,181,.06);border:1px solid rgba(74,122,181,.15);border-radius:6px;color:var(--blue2);font-weight:500;font-size:.8rem;text-decoration:none;text-align:center;letter-spacing:.03em">Search VIN: Find Dealer, CarGurus &amp; AutoTrader</a>`
+    ? `<a href="https://www.google.com/search?q=${r.vin}" target="_blank" style="display:block;padding:9px 14px;background:rgba(74,122,181,.06);border:1px solid rgba(74,122,181,.15);border-radius:6px;color:var(--blue2);font-weight:500;font-size:.8rem;text-decoration:none;text-align:center;letter-spacing:.01em">Search VIN: Find Dealer, CarGurus &amp; AutoTrader</a>`
     : '';
   const ctaLinks = (dealerLink || carfaxLink || vinSearchLink)
     ? `<div style="display:flex;flex-direction:column;gap:8px;margin-top:4px">${dealerLink}${vinSearchLink}${carfaxLink}</div>`
@@ -1971,15 +2659,15 @@ function showLoading() {
   document.getElementById('btn-txt').textContent = 'Searching…';
   setTimeout(()=>{
     document.getElementById('btn-search').disabled = false;
-    document.getElementById('btn-txt').textContent = '🔍 Search';
+    document.getElementById('btn-txt').textContent = 'Search';
   }, 8000);
 }
 
 function showError(msg) {
   document.getElementById('btn-search').disabled = false;
-  document.getElementById('btn-txt').textContent = '🔍 Search';
+  document.getElementById('btn-txt').textContent = 'Search';
   const grid = document.getElementById('results-grid');
-  grid.innerHTML = `<div class="state-wrap"><div class="state-emoji">⚠️</div><div class="state-title">Error</div><div class="state-sub">${msg}</div></div>`;
+  grid.innerHTML = `<div class="state-wrap"><div class="state-title">Error</div><div class="state-sub">${msg}</div></div>`;
   toast('Could not reach the server. Is it running on port 8000?');
 }
 
@@ -2032,8 +2720,7 @@ function appendToolCalls(toolCalls) {
     const fmtJson = obj => JSON.stringify(obj, null, 2);
     div.innerHTML = `
       <div class="tool-call-header" onclick="this.parentElement.classList.toggle('open')">
-        <span>${tc.icon || '🔧'} ${tc.label}</span>
-        <span class="tool-tag">${tc.model}</span>
+        <span>${tc.label}</span>
         <span class="tool-toggle">▼</span>
       </div>
       <div class="tool-call-body">
@@ -2119,13 +2806,16 @@ function renderHistoryPanel() {
     const today = !isNaN(ts) && new Date().toDateString() === ts.toDateString();
     const timeStr = isNaN(ts) ? '' : ts.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
     const dateStr = isNaN(ts) ? '' : ts.toLocaleDateString([], {month:'short', day:'numeric'});
-    const label = e.intent?.make
+    const shortQuery = e.query.slice(0, 52) + (e.query.length > 52 ? '…' : '');
+    const subLabel   = e.intent?.make
       ? `${e.intent.make} ${e.intent.model||''}`.trim()
-      : e.query.slice(0, 38) + (e.query.length > 38 ? '…' : '');
+      : '';
     return `
       <div class="chat-history-item ${isActive ? 'active' : ''}" onclick="restoreHistory(${e.id})">
-        <div class="chi-query ${isActive ? 'active-text' : ''}" title="${e.query.replace(/"/g,'&quot;')}">${label}</div>
-        <div class="chi-meta">${e.total > 0 ? e.total+' results' : 'No results'} · ${today ? timeStr : dateStr}</div>
+        <div style="flex:1;min-width:0;overflow:hidden">
+          <div class="chi-query ${isActive ? 'active-text' : ''}" title="${e.query.replace(/"/g,'&quot;')}">${shortQuery}</div>
+          ${subLabel ? `<div style="font-size:.82rem;color:var(--muted);font-family:'Barlow Condensed',sans-serif;letter-spacing:.02em;margin-top:1px">${subLabel} · ${e.total > 0 ? e.total+' results' : 'No results'} · ${today ? timeStr : dateStr}</div>` : `<div style="font-size:.82rem;color:var(--muted);font-family:'Barlow Condensed',sans-serif;letter-spacing:.02em;margin-top:1px">${e.total > 0 ? e.total+' results' : 'No results'} · ${today ? timeStr : dateStr}</div>`}
+        </div>
       </div>`;
   }).join('');
 }
@@ -2146,6 +2836,7 @@ function restoreHistory(id) {
   document.getElementById('inp-year').value  = entry.intent.year  || '';
   document.getElementById('inp-state').value = entry.intent.state || '';
   if(entry.intent.max_price) document.getElementById('max-price').value = entry.intent.max_price;
+  if(entry.intent.body_style) { const bss = document.getElementById('body-style-select'); if(bss) bss.value = entry.intent.body_style; }
   if(entry.intent.condition) {
     currentCond = entry.intent.condition;
     document.querySelectorAll('#sidebar-cond-chips .filter-chip').forEach(c =>
@@ -2197,7 +2888,7 @@ async function sendChat() {
     // ── QA mode: concierge answered a general car question ────
     if(d.is_qa) {
       const formatted = (d.answer || '').replace(/\n\n/g, '<br/><br/>').replace(/\n/g, '<br/>');
-      appendChatMsg('ai', `<span style="font-family:'Cinzel',serif;font-size:.78rem;line-height:1.9;letter-spacing:.02em">${formatted}</span>`, true);
+      appendChatMsg('ai', `<span style="font-family:'Barlow Condensed',sans-serif;font-size:.92rem;line-height:1.9;letter-spacing:.02em">${formatted}</span>`, true);
       return;
     }
 
@@ -2227,6 +2918,14 @@ async function sendChat() {
     if(intent.drivetrain) currentDrivetrain = intent.drivetrain;
     if(intent.no_accidents) filterNoAccidents = true;
     if(intent.one_owner)    filterOneOwner    = true;
+    if(intent.body_style) {
+      const bss = document.getElementById('body-style-select');
+      if(bss) bss.value = intent.body_style;
+    }
+    if(intent.fuel_type) {
+      const fts = document.getElementById('fuel-type-select');
+      if(fts) fts.value = intent.fuel_type;
+    }
 
     // Render listings
     lastResults = d.results || [];
@@ -2252,21 +2951,52 @@ async function sendChat() {
     const total = d.total || 0;
     const alts = d.suggested_alternatives || [];
     const summary = intent.summary || '';
-    let aiMsg = `<strong>${intent.make||''} ${intent.model||''}</strong>: `;
-    aiMsg += total > 0
-      ? `found <strong>${total}</strong> listing${total!==1?'s':''}`
-      : `no listings found in cache yet`;
-    if(d.stats?.avg_price) aiMsg += `, avg <strong>$${d.stats.avg_price.toLocaleString()}</strong>`;
-    if(summary) aiMsg += `<br/><span style="font-size:.78rem;color:var(--muted);margin-top:3px;display:block">${summary}</span>`;
-    if(d.api_calls > 0) aiMsg += `<span style="font-size:.7rem;color:var(--subtle);display:block;margin-top:4px;letter-spacing:0.02em">Fetched live &middot; ${d.api_calls} API call${d.api_calls!==1?'s':''}</span>`;
+    const brandCategory = d.brand_category || '';
+    const categoryLabels = {
+      european: '🇪🇺 European', japanese: '🇯🇵 Japanese',
+      american: '🇺🇸 American', korean: '🇰🇷 Korean',
+      luxury: '✨ Luxury', electric: '⚡ Electric'
+    };
 
-    if(alts.length > 0) {
-      aiMsg += `<div style="font-family:'Cinzel',serif;font-size:.6rem;color:var(--muted);margin-top:8px;margin-bottom:4px;letter-spacing:0.1em;text-transform:uppercase">Also consider:</div>`;
-      aiMsg += `<div class="chat-chips">`;
-      aiMsg += alts.map(a =>
-        `<span class="chat-chip" onclick="sendChatFor('${a.make}','${a.model}')" title="${(a.reason||'').replace(/'/g,"&#39;")}">${a.make} ${a.model}</span>`
-      ).join('');
-      aiMsg += `</div>`;
+    let aiMsg = '';
+
+    if(brandCategory && !d.brand_was_specified) {
+      // Category search banner
+      const catLabel = categoryLabels[brandCategory] || brandCategory;
+      aiMsg += `<div style="background:rgba(196,162,83,0.07);border:1px solid rgba(196,162,83,0.2);border-radius:8px;padding:9px 13px;margin-bottom:10px;">
+        <span style="font-family:'Cinzel',serif;font-size:.75rem;font-weight:700;color:var(--gold);letter-spacing:0.08em">${catLabel} Cars</span>
+        ${intent.max_price ? `<span style="font-size:.78rem;color:var(--muted);margin-left:8px">under $${parseInt(intent.max_price).toLocaleString()}</span>` : ''}
+      </div>`;
+      aiMsg += total > 0
+        ? `Found <strong>${total}</strong> listing${total!==1?'s':''} across ${catLabel} brands in our cache.`
+        : `No ${catLabel} listings cached yet — click a brand below to fetch live data.`;
+      if(d.stats?.avg_price) aiMsg += ` Avg price <strong>$${d.stats.avg_price.toLocaleString()}</strong>.`;
+      if(summary) aiMsg += `<br/><span style="font-size:.82rem;color:var(--muted);margin-top:4px;display:block">${summary}</span>`;
+      if(alts.length > 0) {
+        aiMsg += `<div style="font-size:.7rem;font-weight:700;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin:10px 0 5px">Browse by brand:</div>`;
+        aiMsg += `<div class="chat-chips">`;
+        aiMsg += alts.map(a =>
+          `<span class="chat-chip" onclick="sendChatFor('${a.make}','${a.model}')" title="Fetch live ${a.make} ${a.model} listings">${a.make}</span>`
+        ).join('');
+        aiMsg += `</div>`;
+      }
+    } else {
+      // Normal single-brand result
+      aiMsg = `<strong>${intent.make||''} ${intent.model||''}</strong>: `;
+      aiMsg += total > 0
+        ? `found <strong>${total}</strong> listing${total!==1?'s':''}`
+        : `no listings found in cache yet`;
+      if(d.stats?.avg_price) aiMsg += `, avg <strong>$${d.stats.avg_price.toLocaleString()}</strong>`;
+      if(summary) aiMsg += `<br/><span style="font-size:.92rem;color:var(--muted);margin-top:3px;display:block">${summary}</span>`;
+      if(d.api_calls > 0) aiMsg += `<span style="font-size:.92rem;color:var(--subtle);display:block;margin-top:4px;letter-spacing:0.02em">Live data — just synced from dealers</span>`;
+      if(alts.length > 0) {
+        aiMsg += `<div style="font-family:'Barlow Condensed',sans-serif;font-size:.92rem;color:var(--muted);margin-top:8px;margin-bottom:4px;letter-spacing:0.03em;text-transform:uppercase">Also consider:</div>`;
+        aiMsg += `<div class="chat-chips">`;
+        aiMsg += alts.map(a =>
+          `<span class="chat-chip" onclick="sendChatFor('${a.make}','${a.model}')" title="${(a.reason||'').replace(/'/g,"&#39;")}">${a.make} ${a.model}</span>`
+        ).join('');
+        aiMsg += `</div>`;
+      }
     }
 
     appendChatMsg('ai', aiMsg, true);
@@ -2313,7 +3043,7 @@ async function openAiAnalysis(vin, idx) {
     <div class="ai-loading">
       <div class="ai-spinner"></div>
       <div>Analyzing deal vs market…</div>
-      <div style="font-size:.78rem;margin-top:6px;color:var(--muted)">Comparing price, history & negotiation leverage</div>
+      <div style="font-size:.92rem;margin-top:6px;color:var(--muted)">Comparing price, history & negotiation leverage</div>
     </div>`;
   modal.classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -2338,54 +3068,54 @@ async function openAiAnalysis(vin, idx) {
       `<li style="margin-bottom:6px;padding-left:8px;border-left:2px solid var(--rose)">${f}</li>`).join('');
     const tipsHtml = (a.negotiation_tips||[]).map((t,i) =>
       `<div style="display:flex;gap:10px;margin-bottom:8px">
-         <span style="min-width:20px;height:20px;border-radius:3px;background:var(--gold-soft);border:1px solid rgba(196,162,83,.2);color:var(--gold);font-weight:600;font-size:.68rem;display:flex;align-items:center;justify-content:center;flex-shrink:0">${i+1}</span>
+         <span style="min-width:20px;height:20px;border-radius:3px;background:var(--gold-soft);border:1px solid rgba(196,162,83,.2);color:var(--gold);font-weight:600;font-size:.90rem;display:flex;align-items:center;justify-content:center;flex-shrink:0">${i+1}</span>
          <span style="font-size:.84rem;color:var(--subtle);line-height:1.5">${t}</span>
        </div>`).join('');
 
     const cachedNote = d.cached
-      ? `<div style="font-family:'Cinzel',serif;text-align:right;font-size:.56rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase">Cached</div>`
+      ? `<div style="font-family:'Barlow Condensed',sans-serif;text-align:right;font-size:.96rem;color:var(--muted);letter-spacing:.02em;text-transform:uppercase">Cached</div>`
       : '';
 
     document.getElementById('ai-modal-body').innerHTML = `
       ${cachedNote}
       <div style="display:flex;align-items:center;gap:12px">
-        <span class="rec-badge ${recClass}" style="padding:5px 14px;border-radius:4px;font-weight:600;font-size:.85rem;letter-spacing:.04em">${a.recommendation||'—'}</span>
-        <span style="font-size:.82rem;font-weight:500;color:var(--text);font-family:'Cinzel',serif;letter-spacing:.04em">${a.headline||''}</span>
+        <span class="rec-badge ${recClass}" style="padding:5px 14px;border-radius:4px;font-weight:600;font-size:.99rem;letter-spacing:.02em">${a.recommendation||'—'}</span>
+        <span style="font-size:.96rem;font-weight:500;color:var(--text);font-family:'Barlow Condensed',sans-serif;letter-spacing:.02em">${a.headline||''}</span>
       </div>
 
       <div style="background:rgba(255,255,255,.025);border:1px solid var(--border);border-radius:8px;padding:14px">
-        <div style="font-family:'Cinzel',serif;font-size:.55rem;font-weight:600;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px">Price Assessment</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:.86rem;font-weight:600;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;margin-bottom:8px">Price Assessment</div>
         <p style="font-size:.86rem;color:var(--subtle);line-height:1.6">${a.price_assessment||''}</p>
       </div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div style="background:rgba(74,144,112,.04);border:1px solid rgba(74,144,112,.12);border-radius:8px;padding:14px">
-          <div style="font-family:'Cinzel',serif;font-size:.55rem;font-weight:600;color:var(--emerald);letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px">Strengths</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:.86rem;font-weight:600;color:var(--emerald);letter-spacing:.04em;text-transform:uppercase;margin-bottom:10px">Strengths</div>
           <ul style="list-style:none;padding:0;font-size:.81rem;color:var(--subtle);line-height:1.5">${greenHtml||'<li style="color:var(--muted)">None noted</li>'}</ul>
         </div>
         <div style="background:rgba(160,80,96,.04);border:1px solid rgba(160,80,96,.12);border-radius:8px;padding:14px">
-          <div style="font-family:'Cinzel',serif;font-size:.55rem;font-weight:600;color:var(--rose);letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px">Concerns</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:.86rem;font-weight:600;color:var(--rose);letter-spacing:.04em;text-transform:uppercase;margin-bottom:10px">Concerns</div>
           <ul style="list-style:none;padding:0;font-size:.81rem;color:var(--subtle);line-height:1.5">${redHtml||'<li style="color:var(--muted)">None noted</li>'}</ul>
         </div>
       </div>
 
       ${tipsHtml ? `
       <div style="background:var(--gold-soft);border:1px solid rgba(196,162,83,.15);border-radius:8px;padding:14px">
-        <div style="font-family:'Cinzel',serif;font-size:.55rem;font-weight:600;color:var(--gold);letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px">Negotiation Tactics</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:.86rem;font-weight:600;color:var(--gold);letter-spacing:.04em;text-transform:uppercase;margin-bottom:10px">Negotiation Tactics</div>
         ${tipsHtml}
       </div>` : ''}
 
       <div style="background:rgba(74,122,181,.06);border:1px solid rgba(74,122,181,.15);border-radius:8px;padding:14px;margin-bottom:8px">
-        <div style="font-family:'Cinzel',serif;font-size:.55rem;font-weight:600;color:var(--blue2);letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px">Bottom Line</div>
-        <p style="font-size:.78rem;color:var(--text);font-weight:400;line-height:1.85;font-family:'Cinzel',serif;letter-spacing:.025em">${a.bottom_line || '<span style="color:var(--muted)">See price assessment and negotiation tips above for full guidance.</span>'}</p>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:.86rem;font-weight:600;color:var(--blue2);letter-spacing:.04em;text-transform:uppercase;margin-bottom:8px">Bottom Line</div>
+        <p style="font-size:.92rem;color:var(--text);font-weight:400;line-height:1.85;font-family:'Barlow Condensed',sans-serif;letter-spacing:.025em">${a.bottom_line || '<span style="color:var(--muted)">See price assessment and negotiation tips above for full guidance.</span>'}</p>
       </div>`;
 
   } catch(e) {
     document.getElementById('ai-modal-body').innerHTML = `
       <div style="text-align:center;padding:40px;color:var(--rose)">
         <div style="font-size:1.2rem;font-weight:600;margin-bottom:8px">Analysis unavailable</div>
-        <div style="font-size:.82rem;color:var(--muted)">${e.message}</div>
-        <div style="font-size:.75rem;margin-top:12px;color:var(--muted)">Ensure ANTHROPIC_API_KEY is set in data_pipeline/.env</div>
+        <div style="font-size:.96rem;color:var(--muted)">${e.message}</div>
+        <div style="font-size:.90rem;margin-top:12px;color:var(--muted)">Ensure ANTHROPIC_API_KEY is set in data_pipeline/.env</div>
       </div>`;
   }
 }
@@ -2414,7 +3144,7 @@ async function loadMarketPulse(force = false) {
   const text = document.getElementById('pulse-text');
   const btn  = document.getElementById('btn-pulse');
   card.style.display = '';
-  text.innerHTML = '<span style="color:var(--muted);font-size:.82rem">Generating insights…</span>';
+  text.innerHTML = '<span style="color:var(--muted);font-size:.96rem">Generating insights…</span>';
   btn.disabled = true;
 
   try {
@@ -2440,46 +3170,291 @@ async function loadMarketPulse(force = false) {
     const sc    = scoreMap[score] || scoreMap['Neutral'];
 
     const insightRows = [
-      { label:'Supply',   text: ins.supply,   accent:'rgba(96,165,250,0.7)'  },
-      { label:'Pricing',  text: ins.pricing,  accent:'rgba(167,139,250,0.7)' },
-      { label:'Momentum', text: ins.momentum, accent:'rgba(52,211,153,0.7)'  },
+      { label:'Supply',   text: ins.supply,   accent:'#3b82f6' },
+      { label:'Pricing',  text: ins.pricing,  accent:'#8b5cf6' },
+      { label:'Momentum', text: ins.momentum, accent:'#10b981' },
     ].filter(r => r.text);
 
     const verdictHtml = ins.verdict ? `
-      <div style="margin-top:12px;padding:12px 14px;background:var(--gold-soft);border:1px solid rgba(196,162,83,0.25);border-radius:6px">
-        <div style="font-family:'Cinzel',serif;font-size:.65rem;letter-spacing:.14em;color:var(--gold);font-weight:700;margin-bottom:7px;text-transform:uppercase">Verdict</div>
-        <div style="font-family:'Cinzel',serif;font-size:.73rem;color:#e8d9b5;line-height:1.7;letter-spacing:.025em">${ins.verdict}</div>
+      <div class="pulse-verdict">
+        <div class="pulse-verdict-label">Verdict</div>
+        <div class="pulse-verdict-text">${ins.verdict}</div>
       </div>` : '';
 
     // Fallback: old plain-text format
     const fallbackHtml = d.pulse
       ? (d.pulse||'').split('\n').filter(l=>l.trim()).map(l=>
-          `<div style="margin-bottom:10px;font-family:'Cinzel',serif;font-size:.75rem;color:var(--subtle);line-height:1.7;letter-spacing:.02em">${l.trim()}</div>`
+          `<div style="margin-bottom:8px;font-family:'Barlow Condensed',sans-serif;font-size:1.0rem;color:var(--subtle);line-height:1.6;letter-spacing:.02em">${l.trim()}</div>`
         ).join('')
-      : '<span style="color:var(--muted);font-family:\'Cinzel\',serif;font-size:.72rem">No data available.</span>';
+      : '<span style="color:var(--muted);font-size:.92rem">No data available.</span>';
 
     text.innerHTML = ins.supply ? `
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
-        <div style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;background:${sc.bg};border:1px solid ${sc.border}">
-          <span style="width:7px;height:7px;border-radius:50%;background:${sc.dot};display:inline-block;flex-shrink:0"></span>
-          <span style="font-family:'Cinzel',serif;font-size:.68rem;font-weight:700;letter-spacing:.12em;color:${sc.text};text-transform:uppercase">${score} Market</span>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:9px">
+        <div style="display:inline-flex;align-items:center;gap:6px;padding:4px 13px;border-radius:20px;background:${sc.bg};border:1px solid ${sc.border}">
+          <span style="width:8px;height:8px;border-radius:50%;background:${sc.dot};display:inline-block;flex-shrink:0"></span>
+          <span style="font-family:'Barlow Condensed',sans-serif;font-size:1.04rem;font-weight:700;letter-spacing:.05em;color:${sc.text};text-transform:uppercase">${score} Market</span>
         </div>
       </div>
-      ${insightRows.map(r => `
-        <div style="margin-bottom:9px;padding:10px 13px;background:rgba(255,255,255,0.028);border:1px solid rgba(255,255,255,0.05);border-left:3px solid ${r.accent};border-radius:5px">
-          <div style="font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.14em;color:var(--muted);font-weight:700;margin-bottom:5px;text-transform:uppercase">${r.label}</div>
-          <div style="font-family:'Cinzel',serif;font-size:.73rem;color:var(--subtle);line-height:1.7;letter-spacing:.02em">${r.text}</div>
-        </div>`).join('')}
+      <div style="display:grid;grid-template-columns:repeat(${insightRows.length},1fr);gap:8px;margin-bottom:${ins.verdict ? '8px' : '0'}">
+        ${insightRows.map(r => `
+          <div class="pulse-insight-card" style="border-top:3px solid ${r.accent}">
+            <div class="pulse-insight-label">${r.label}</div>
+            <div class="pulse-insight-text">${r.text}</div>
+          </div>`).join('')}
+      </div>
       ${verdictHtml}
     ` : fallbackHtml;
 
     pulseLoaded = true;
 
+    // Update collapsed header summary line
+    const summaryLine = document.getElementById('pulse-summary-line');
+    if(summaryLine) {
+      const verdict = ins.verdict || d.pulse || '';
+      const short = verdict.replace(/<[^>]*>/g,'').split('.')[0];
+      summaryLine.textContent = short ? short + '.' : `${score} Market`;
+    }
+
   } catch(e) {
-    text.innerHTML = `<span style="color:var(--rose);font-size:.8rem">⚠ ${e.message}</span>`;
+    text.innerHTML = `<span style="color:var(--rose);font-size:.8rem">${e.message}</span>`;
   } finally {
     btn.disabled = false;
   }
+}
+
+// ══════════════════════════════════════════════════════════════
+// COMPARE FEATURE
+// ══════════════════════════════════════════════════════════════
+const compareMap = new Map();  // vin → listing object, max 3
+
+function toggleCompare(vin, idx, event) {
+  event.stopPropagation();
+  const r = lastResults[idx];
+  if(!r) return;
+  if(compareMap.has(vin)) {
+    compareMap.delete(vin);
+  } else {
+    if(compareMap.size >= 3) { toast('Max 3 cars for comparison. Remove one first.'); return; }
+    compareMap.set(vin, r);
+  }
+  updateCompareUI();
+}
+
+function updateCompareUI() {
+  // Update card borders + button states
+  document.querySelectorAll('.deal-card').forEach(card => {
+    const vin = card.dataset.vin;
+    card.classList.toggle('in-compare', compareMap.has(vin));
+    const btn = card.querySelector('.btn-compare');
+    if(btn) btn.classList.toggle('comparing', compareMap.has(vin));
+    if(btn) btn.textContent = compareMap.has(vin) ? 'Comparing — click to remove' : 'Add to Compare';
+  });
+
+  // Tray
+  const tray = document.getElementById('compare-tray');
+  const carsDiv = document.getElementById('compare-tray-cars');
+  if(compareMap.size === 0) {
+    tray.style.display = 'none';
+    return;
+  }
+  tray.style.display = 'flex';
+  const slots = Array.from(compareMap.values());
+  // Fill 3 slots
+  carsDiv.innerHTML = [0,1,2].map(i => {
+    const r = slots[i];
+    if(r) return `
+      <div class="compare-tray-slot filled">
+        <button class="compare-slot-remove" onclick="removeFromCompare('${r.vin}')">✕</button>
+        <div class="compare-slot-name">${r.year||''} ${r.make||''} ${r.model||''}</div>
+        <div class="compare-slot-price">${r.listing_price ? '$'+r.listing_price.toLocaleString() : '—'}</div>
+      </div>`;
+    return `<div class="compare-tray-slot" style="opacity:.4"><div class="compare-slot-name" style="color:var(--muted)">+ Add a car</div></div>`;
+  }).join('');
+  document.getElementById('btn-compare-now').disabled = compareMap.size < 2;
+}
+
+function removeFromCompare(vin) {
+  compareMap.delete(vin);
+  updateCompareUI();
+}
+
+function clearCompare() {
+  compareMap.clear();
+  updateCompareUI();
+}
+
+function openCompareModal() {
+  if(compareMap.size < 2) return;
+  renderCompareTable();
+  document.getElementById('compare-modal').style.display = 'block';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeCompareModal() {
+  document.getElementById('compare-modal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function renderCompareTable() {
+  const cars = Array.from(compareMap.values());
+  const n = cars.length;
+  const tbl = document.getElementById('compare-table-el');
+
+  // Helper: pick best/worst indices for numeric arrays (lower is better for price/mileage/accidents)
+  function highlight(values, lowerIsBetter) {
+    const nums = values.map(v => parseFloat(v));
+    const valid = nums.filter(v => !isNaN(v));
+    if(valid.length < 2) return values.map(() => '');
+    const best  = lowerIsBetter ? Math.min(...valid) : Math.max(...valid);
+    const worst = lowerIsBetter ? Math.max(...valid) : Math.min(...valid);
+    return nums.map(v => {
+      if(isNaN(v)) return '';
+      if(v === best)  return 'cmp-best';
+      if(v === worst) return 'cmp-worst';
+      return '';
+    });
+  }
+
+  // Build header row (car images + title + price)
+  const headerCols = cars.map((r,i) => `
+    <th>
+      ${r.primary_image
+        ? `<img class="compare-car-img" src="${r.primary_image}" alt="" onerror="this.style.display='none'">`
+        : `<div class="compare-car-img" style="display:flex;align-items:center;justify-content:center;font-size:.92rem;letter-spacing:.02em;color:var(--muted);font-family:'Barlow Condensed',sans-serif">NO IMAGE</div>`}
+      <div class="compare-th-label">${r.is_cpo ? 'CPO' : r.is_used ? 'Pre-Owned' : 'New'}</div>
+      <div class="compare-th-title">${r.year||''} ${r.make||''} ${r.model||''}<br><span style="font-weight:400;color:var(--muted)">${r.trim||''}</span></div>
+      <div class="compare-th-price">${r.listing_price ? '$'+r.listing_price.toLocaleString() : '—'}</div>
+      <button class="compare-th-remove" onclick="removeFromCompare('${r.vin}');renderCompareTable()">Remove ✕</button>
+    </th>`).join('');
+
+  // Row definitions: [label, extractor fn, lowerIsBetter]
+  const rows = [
+    ['Listed Price',    r => r.listing_price  ? '$'+r.listing_price.toLocaleString()    : '—', true,  r => r.listing_price],
+    ['Base MSRP',       r => r.base_msrp      ? '$'+r.base_msrp.toLocaleString()        : '—', null,  null],
+    ['Discount',        r => r.discount_pct   ? r.discount_pct.toFixed(1)+'% off'       : '—', false, r => r.discount_pct],
+    ['Savings',         r => r.discount_amount? '$'+Math.round(r.discount_amount).toLocaleString(): '—', false, r => r.discount_amount],
+    ['Mileage',         r => r.mileage        ? r.mileage.toLocaleString()+' mi'        : '0 mi', true, r => r.mileage],
+    ['Deal Score',      r => ((r.score||0)*100).toFixed(0)+'/100',                        false, r => r.score],
+    ['Accidents',       r => r.accidents != null ? r.accidents+' reported'               : '—', true,  r => r.accidents],
+    ['Drivetrain',      r => r.drivetrain||'—',                                           null,  null],
+    ['Ext. Color',      r => r.exterior_color||'—',                                       null,  null],
+    ['Engine',          r => r.engine||'—',                                               null,  null],
+    ['One Owner',       r => r.one_owner ? '✓ Yes' : '—',                                false, r => r.one_owner ? 1 : 0],
+    ['Dealer',          r => (r.dealer_name||'—')+'<br><span style="color:var(--muted)">'+(r.dealer_city||'')+', '+(r.dealer_state||'')+'</span>', null, null],
+    ['Distance',        r => r.distance_miles != null ? r.distance_miles+' mi'           : '—', true,  r => r.distance_miles],
+    ['VIN',             r => `<span style="font-size:.90rem;font-family:monospace;color:var(--muted)">${r.vin||'—'}</span>`, null, null],
+  ];
+
+  let html = `<thead><tr><th></th>${headerCols}</tr></thead><tbody>`;
+
+  for(const [label, fmt, lowerIsBetter, numFn] of rows) {
+    const vals = cars.map(r => fmt(r));
+    const classes = numFn && lowerIsBetter !== null
+      ? highlight(cars.map(r => numFn(r)), lowerIsBetter)
+      : cars.map(()=>'');
+
+    // Score row gets a visual bar
+    const isScore = label === 'Deal Score';
+    const cells = cars.map((r,i) => {
+      const cls = classes[i] ? ` class="${classes[i]}"` : '';
+      if(isScore) {
+        const pct = (r.score||0)*100;
+        const color = pct >= 85 ? '#4ade80' : pct >= 65 ? '#7BA0C8' : '#C4A253';
+        return `<td${cls}>${vals[i]}<div class="cmp-score-bar"><div class="cmp-score-fill" style="width:${pct}%;background:${color}"></div></div></td>`;
+      }
+      return `<td${cls}>${vals[i]}</td>`;
+    }).join('');
+
+    html += `<tr><td>${label}</td>${cells}</tr>`;
+  }
+
+  html += '</tbody>';
+  tbl.innerHTML = html;
+}
+
+
+// ══════════════════════════════════════════════════════════════
+// MAP VIEW (Leaflet.js)
+// ══════════════════════════════════════════════════════════════
+let mapInstance = null;
+let currentView = 'grid';
+
+function switchView(mode) {
+  currentView = mode;
+  document.getElementById('btn-view-grid').classList.toggle('active', mode === 'grid');
+  document.getElementById('btn-view-map').classList.toggle('active', mode === 'map');
+  document.getElementById('results-grid').style.display = mode === 'grid' ? '' : 'none';
+  document.getElementById('map-container').style.display = mode === 'map' ? 'block' : 'none';
+  document.getElementById('pagination').style.display = mode === 'grid' ? '' : 'none';
+  if(mode === 'map') renderMap(lastResults);
+}
+
+function scoreToColor(score) {
+  if(score >= 0.85) return '#4ade80';
+  if(score >= 0.65) return '#7BA0C8';
+  return '#C4A253';
+}
+
+function makeMarkerIcon(score) {
+  const color = scoreToColor(score);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="36" viewBox="0 0 28 36">
+    <path d="M14 0C6.27 0 0 6.27 0 14c0 10.5 14 22 14 22S28 24.5 28 14C28 6.27 21.73 0 14 0z" fill="${color}" opacity="0.9"/>
+    <circle cx="14" cy="14" r="7" fill="white" opacity="0.9"/>
+    <text x="14" y="18" font-size="8" font-weight="bold" text-anchor="middle" fill="#111">${Math.round(score*100)}</text>
+  </svg>`;
+  return L.divIcon({
+    html: svg, className: '', iconSize: [28, 36], iconAnchor: [14, 36], popupAnchor: [0, -36]
+  });
+}
+
+function renderMap(listings) {
+  const container = document.getElementById('map-container');
+  if(!container) return;
+
+  const geoListings = listings.filter(r => r.dealer_lat && r.dealer_lng);
+  if(!geoListings.length) {
+    container.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-size:.99rem;letter-spacing:.02em">No dealer coordinates available for map view</div>`;
+    return;
+  }
+
+  // Init or reuse map
+  if(!mapInstance) {
+    mapInstance = L.map('map-container', { zoomControl: true });
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '© OpenStreetMap © CARTO',
+      subdomains: 'abcd', maxZoom: 19
+    }).addTo(mapInstance);
+  } else {
+    mapInstance.eachLayer(l => { if(l instanceof L.Marker || l instanceof L.LayerGroup) mapInstance.removeLayer(l); });
+  }
+
+  const bounds = [];
+  geoListings.forEach((r, idx) => {
+    const lat = r.dealer_lat, lng = r.dealer_lng;
+    bounds.push([lat, lng]);
+
+    const score = r.score || 0;
+    const condition = r.is_cpo ? 'CPO' : r.is_used ? 'Used' : 'New';
+    const dist = r.distance_miles != null ? `<br>${r.distance_miles} mi away` : '';
+    const popup = `
+      <div class="map-popup-title">${r.year||''} ${r.make||''} ${r.model||''} ${r.trim||''}</div>
+      <div class="map-popup-price">${r.listing_price ? '$'+r.listing_price.toLocaleString() : '—'}</div>
+      <div class="map-popup-meta">
+        ${r.mileage ? r.mileage.toLocaleString()+' mi' : '0 mi'} · ${condition} · ${r.exterior_color||''}${dist}<br>
+        ${r.dealer_name||''} · ${r.dealer_city||''}, ${r.dealer_state||''}
+        ${r.discount_pct ? '<br>'+r.discount_pct.toFixed(1)+'% off MSRP' : ''}
+      </div>
+      <div class="map-popup-score">Deal Score: ${Math.round(score*100)}/100</div>
+      <br><button onclick="openModal(${idx})" style="margin-top:6px;padding:5px 12px;background:rgba(74,122,181,0.2);border:1px solid rgba(74,122,181,0.4);border-radius:5px;color:#7BA0C8;cursor:pointer;font-size:.90rem;width:100%">Full Details</button>`;
+
+    L.marker([lat, lng], { icon: makeMarkerIcon(score) })
+      .addTo(mapInstance)
+      .bindPopup(popup, { maxWidth: 260 });
+  });
+
+  if(bounds.length) mapInstance.fitBounds(bounds, { padding: [40, 40], maxZoom: 11 });
+  // Force tile re-render after display: none → block transition
+  setTimeout(() => mapInstance.invalidateSize(), 50);
 }
 
 // ─── Toast ──────────────────────────────────────────────────
@@ -2492,5 +3467,6 @@ function toast(msg, duration=3500) {
   setTimeout(()=>{ t.style.opacity='0'; t.style.transition='opacity .4s'; setTimeout(()=>t.remove(),400); }, duration);
 }
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 </body>
 </html>

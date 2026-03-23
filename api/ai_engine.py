@@ -82,13 +82,43 @@ def extract_search_intent(query: str) -> dict:
                 "drivetrain":   {"type": "string",  "enum": ["AWD","RWD","FWD",""],  "description": "Drivetrain preference"},
                 "max_mileage":  {"type": "integer", "description": "Maximum odometer miles. 'Low miles' → 30000, 'Very low' → 15000"},
                 "color":        {"type": "string",  "description": "Exterior color preference"},
+                "body_style":   {
+                    "type": "string",
+                    "enum": ["convertible","coupe","sedan","SUV","crossover","truck","hatchback","wagon",""],
+                    "description": (
+                        "Vehicle body style / roof type. "
+                        "'convertible roof' / 'drop top' / 'ragtop' / 'cabriolet' / 'open top' → convertible. "
+                        "A convertible can also be described as a coupe — if user says 'convertible coupe' or "
+                        "'coupe with convertible roof', set body_style=convertible (not coupe). "
+                        "Only set body_style=coupe when the user explicitly wants a fixed-roof coupe with NO convertible mention."
+                    )
+                },
+                "fuel_type":    {
+                    "type": "string",
+                    "enum": ["gas","hybrid","electric","phev","diesel",""],
+                    "description": "Fuel type. 'EV'/'electric'/'battery' → electric. 'hybrid'/'HEV' → hybrid. 'plug-in'/'PHEV' → phev. 'gas'/'gasoline'/'petrol' → gas. 'diesel' → diesel."
+                },
                 "no_accidents": {"type": "boolean", "description": "True if user wants accident-free vehicles only"},
                 "one_owner":    {"type": "boolean", "description": "True if user wants single-owner vehicles"},
                 "zip_code":     {"type": "string",  "description": "5-digit US ZIP code if the user mentions one, e.g. 'near 30047', 'within 90210'. When zip_code is set, do NOT also set state."},
                 "radius_miles": {"type": "integer", "description": "Search radius in miles around the ZIP code. If a ZIP is given but no radius mentioned, default to 100."},
+                "brand_category": {
+                    "type": "string",
+                    "enum": ["european", "japanese", "american", "korean", "luxury", "electric", ""],
+                    "description": (
+                        "Set when the user refers to a REGIONAL or TYPE category rather than a specific brand. "
+                        "'European cars' / 'European brands' / 'European models' → 'european'. "
+                        "'Japanese cars' / 'JDM' → 'japanese'. "
+                        "'American cars' / 'domestic' / 'American brands' → 'american'. "
+                        "'Korean cars' / 'Korean brands' → 'korean'. "
+                        "'Luxury cars' / 'premium cars' → 'luxury'. "
+                        "'Electric cars' / 'EVs' / 'all-electric' → 'electric'. "
+                        "Leave empty if the user named a specific brand."
+                    )
+                },
                 "brand_was_specified": {
                     "type": "boolean",
-                    "description": "True if the user explicitly named a car brand/make. False if you are recommending a brand based on feature description."
+                    "description": "True if the user explicitly named a car brand/make. False if you are recommending a brand based on feature description or brand category."
                 },
                 "suggested_alternatives": {
                     "type": "array",
@@ -138,9 +168,41 @@ FEATURE MATCHING RULES — when user describes features without naming a brand:
 - When zip_code is set, do NOT also set state — zip takes priority
 - 'affordable' / 'budget' → used/cpo condition
 - 'certified' / 'CPO' → condition=cpo
+- 'convertible roof' / 'drop top' / 'ragtop' / 'cabriolet' / 'open top' / 'open roof car' → body_style=convertible
+- 'coupe with convertible roof' / 'convertible coupe' → body_style=convertible (NOT coupe — the roof type overrides)
+- 'hardtop coupe' / 'fixed roof coupe' → body_style=coupe
+- 'sedan' / '4-door' → body_style=sedan; 'SUV' / 'crossover' → body_style=SUV or crossover; 'truck' / 'pickup' → body_style=truck
+
+MODEL NAME RULES — use the exact API model name, not the powertrain variant:
+- Lexus TX / TX350 / TX350h / TX500h / TX500 / TX550h → model="TX" (all TX powertrains share one model name)
+- Lexus RX350 → model="RX 350"; RX450h → model="RX 450h"; RX500h → model="RX 500h"
+- Lexus NX350 → model="NX 350"; NX450h → model="NX 450h+"
+- Lexus ES350 → model="ES 350"; ES300h → model="ES 300h"
+- Lexus GX460 → model="GX 460"; GX550 → model="GX 550"
+- Toyota RAV4 Hybrid → model="RAV4 Hybrid"; RAV4 Prime → model="RAV4 Prime"
+- Ford F150 / F-150 → model="F-150"
+- Mercedes C300 → model="C 300"; GLE350 → model="GLE 350"; GLE450 → model="GLE 450"
+- Hyundai IONIQ 5 / Ioniq5 → model="IONIQ 5"; IONIQ 6 → model="IONIQ 6"
+- BMW X5M → model="X5 M"; M3 Competition → model="M3 Competition"
+
+BRAND CATEGORY RULES — when the user refers to a regional/type group instead of a specific brand:
+- 'European cars' / 'European brands' / 'cars from Europe' → brand_category='european', brand_was_specified=False
+  European brands in US: BMW, Mercedes-Benz, Audi, Volkswagen, Volvo, Porsche, Land Rover, MINI, Alfa Romeo, Jaguar, Fiat
+- 'Japanese cars' / 'Japanese brands' / 'JDM' → brand_category='japanese', brand_was_specified=False
+  Japanese brands: Toyota, Honda, Lexus, Mazda, Subaru, Nissan, Infiniti, Acura, Mitsubishi
+- 'American cars' / 'domestic cars' → brand_category='american', brand_was_specified=False
+  American brands: Ford, Chevrolet, Cadillac, Jeep, Dodge, Ram, Lincoln, Buick, GMC
+- 'Korean cars' / 'Korean brands' → brand_category='korean', brand_was_specified=False
+  Korean brands: Hyundai, Kia, Genesis
+- 'Luxury cars' / 'premium brands' → brand_category='luxury', brand_was_specified=False
+- 'Electric cars' / 'EVs' / 'BEV' → brand_category='electric', brand_was_specified=False
+
+For category queries, pick the BEST single representative make+model for the primary result BUT populate
+suggested_alternatives with ALL notable brands/models from that category matching the price/features,
+so the user can explore each. max_price must be set from the budget constraint if mentioned.
 
 IMPORTANT: Always pick ONE best make+model as the primary. Then list alternatives in suggested_alternatives.
-Set brand_was_specified=false when recommending based on features.""",
+Set brand_was_specified=false when recommending based on features or brand category.""",
             messages=[{"role": "user", "content": f"Parse this car search query: {query}"}]
         )
         for block in resp.content:

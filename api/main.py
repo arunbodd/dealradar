@@ -67,13 +67,139 @@ DB_PATH = Path(_db_env) if _db_env else Path.home() / ".car-deal-finder" / "inve
 DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 # ── Startup env check (visible in Render/Railway logs) ───────
-log.info(f"ANTHROPIC_API_KEY: {'SET ✓' if (os.getenv('ANTHROPIC_API_KEY') or '').strip() else 'MISSING ✗'}")
-log.info(f"AUTO_DEV_API_KEY:  {'SET ✓' if AUTO_DEV_API_KEY else 'MISSING ✗'}")
+log.info(f"ANTHROPIC_API_KEY: {'SET [ok]' if (os.getenv('ANTHROPIC_API_KEY') or '').strip() else 'MISSING [!]'}")
+log.info(f"AUTO_DEV_API_KEY:  {'SET [ok]' if AUTO_DEV_API_KEY else 'MISSING [!]'}")
 log.info(f"DATA_PROVIDER:     {DATA_PROVIDER}")
 log.info(f"DB_PATH: {DB_PATH}")
 CACHE_TTL_HOURS   = 24      # hours before auto-refresh
 MAX_FETCH_PAGES   = 5       # 5 pages × 100 listings = 500 per combo
 MISS_THRESHOLD    = 2       # consecutive misses before marking 'removed'
+
+
+# ═══════════════════════════════════════════════════════════════
+# SMART MODEL RESOLUTION  (three layers, no hardcoded tables)
+#
+#  1. Regex   — universal spacing fix: "ES350" → "ES 350"
+#  2. DB mine — query our own inventory for known models for this
+#               make; fuzzy-match the user's input against them.
+#               Self-building: improves as more searches are done.
+#  3. API retry — if fetch returns 0 results, strip powertrain
+#               suffixes progressively ("TX 350h" → "TX 350" → "TX")
+#               until the API responds.  Winning name is stored in
+#               DB so future queries skip the retry entirely.
+# ═══════════════════════════════════════════════════════════════
+
+import re as _re
+
+def _normalize_spacing(model: str) -> str:
+    """Insert space between letters and digits where missing.
+    'ES350' → 'ES 350',  'GLE450' → 'GLE 450',  'TX350h' → 'TX 350h'
+    Also collapses multiple spaces and strips edges.
+    """
+    s = model.strip()
+    s = _re.sub(r'([A-Za-z])(\d)', r'\1 \2', s)   # letter→digit boundary
+    s = _re.sub(r'(\d)([A-Za-z]{2,})', r'\1 \2', s)  # digit→multi-letter
+    s = _re.sub(r' {2,}', ' ', s)
+    return s
+
+
+def _model_variants(model: str) -> list[str]:
+    """
+    Return an ordered list of progressively simpler model strings to try.
+    e.g. 'TX 350h' → ['TX 350h', 'TX 350', 'TX']
+         'RX 350'  → ['RX 350', 'RX']
+    """
+    spaced = _normalize_spacing(model)
+    seen, variants = set(), []
+    for v in [model, spaced]:
+        if v and v not in seen:
+            seen.add(v); variants.append(v)
+
+    # Strip trailing hybrid/powertrain tokens one at a time:
+    # 'TX 350h' → 'TX 350' → 'TX'
+    # 'GLE 450' → 'GLE'   (stops here, does NOT strip 'E' from 'GLE')
+    current = spaced
+    while True:
+        # Remove trailing: digits + optional lowercase hybrid suffix (h/e/+)
+        # Uppercase letters are kept — they're part of the model name (GLE, AMG, etc.)
+        shorter = _re.sub(r'\s*\d+[he+]*\s*$', '', current, flags=_re.IGNORECASE).strip()
+        if not shorter or shorter == current:
+            break
+        if shorter not in seen:
+            seen.add(shorter); variants.append(shorter)
+        current = shorter
+
+    return variants
+
+
+def _db_fuzzy_match(make: str, user_model: str) -> Optional[str]:
+    """
+    Query our own inventory DB for canonical model names for this make,
+    then return the best match for user_model (or None).
+
+    Match priority:
+      1. Exact (case-insensitive)
+      2. Space-collapsed exact  ('RX350' matches 'RX 350')
+      3. User input is a prefix of a DB model ('TX' matches 'TX 350')
+      4. DB model is a prefix of user input   ('TX' from 'TX350h')
+    """
+    try:
+        conn = get_db()
+        rows = conn.execute(
+            "SELECT DISTINCT model FROM inventory WHERE LOWER(make)=? AND status='active'",
+            [make.lower()]
+        ).fetchall()
+        conn.close()
+    except Exception:
+        return None
+
+    if not rows:
+        return None
+
+    db_models = [r["model"] for r in rows]
+    u = user_model.lower().replace(" ", "").replace("-", "")
+
+    # Priority 1: exact case-insensitive
+    for m in db_models:
+        if m.lower() == user_model.lower():
+            return m
+
+    # Priority 2: space-stripped exact
+    for m in db_models:
+        if m.lower().replace(" ", "").replace("-", "") == u:
+            return m
+
+    # Priority 3: user input is a prefix of a DB model (short → long)
+    prefix_hits = [m for m in db_models if m.lower().replace(" ", "").startswith(u)]
+    if prefix_hits:
+        return sorted(prefix_hits, key=len)[0]   # shortest (most general)
+
+    # Priority 4: DB model is a prefix of user input (catches 'TX' → 'TX350h')
+    suffix_hits = [m for m in db_models if u.startswith(m.lower().replace(" ", ""))]
+    if suffix_hits:
+        return sorted(suffix_hits, key=len, reverse=True)[0]  # longest (most specific)
+
+    return None
+
+
+def canonicalize_model(make: str, model: str) -> str:
+    """
+    Layer 1 + 2: regex normalize then DB fuzzy-match.
+    Returns the best known canonical name, or the regex-normalized
+    string if the DB has no data for this make yet.
+    Called before every fetch/key so stale keys are never created.
+    """
+    if not make or not model:
+        return model
+    spaced = _normalize_spacing(model)
+    db_hit = _db_fuzzy_match(make, spaced)
+    if db_hit:
+        if db_hit != model:
+            log.info(f"Model resolved via DB: {make} '{model}' → '{db_hit}'")
+        return db_hit
+    if spaced != model:
+        log.info(f"Model spacing fixed: '{model}' → '{spaced}'")
+    return spaced
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -440,6 +566,32 @@ def fetch_from_api(make: str, model: str, year: Optional[int] = None,
     return results, pages
 
 
+def fetch_with_retry(make: str, model: str, year: Optional[int] = None,
+                     state: Optional[str] = None, zip_code: Optional[str] = None,
+                     radius_miles: Optional[int] = None) -> tuple[List[dict], int, str]:
+    """
+    Layer 3: fetch with progressive model simplification on zero results.
+    Tries each variant from _model_variants() in order, stops at first hit.
+    Returns (results, pages_used, resolved_model_name).
+
+    Example: 'TX350h' → tries 'TX 350h', 'TX 350', 'TX'
+             First non-empty response wins; that name is returned so the
+             caller can update the search key / DB with the canonical form.
+    """
+    variants = _model_variants(model)
+    total_pages = 0
+    for attempt in variants:
+        results, pages = fetch_from_api(make, attempt, year, state, zip_code, radius_miles)
+        total_pages += pages
+        if results:
+            if attempt != model:
+                log.info(f"Model retry succeeded: '{model}' → '{attempt}' ({len(results)} results)")
+            return results, total_pages, attempt
+        if pages == 0:
+            break  # API error, no point retrying
+    return [], total_pages, model
+
+
 # ═══════════════════════════════════════════════════════════════
 # DELTA SYNC — the core of inventory freshness
 # ═══════════════════════════════════════════════════════════════
@@ -582,16 +734,133 @@ def delta_sync(key: str, fresh: List[dict], pages_used: int):
 
 
 # ═══════════════════════════════════════════════════════════════
+# BRAND CATEGORIES — for regional/type car queries
+# ═══════════════════════════════════════════════════════════════
+
+BRAND_CATEGORIES: dict[str, list[tuple[str, str]]] = {
+    "european": [
+        ("BMW", "3 Series"), ("BMW", "5 Series"), ("BMW", "X5"), ("BMW", "X3"),
+        ("Mercedes-Benz", "C 300"), ("Mercedes-Benz", "E 350"), ("Mercedes-Benz", "GLE 350"), ("Mercedes-Benz", "GLC 300"),
+        ("Audi", "A4"), ("Audi", "A6"), ("Audi", "Q5"), ("Audi", "Q7"),
+        ("Volkswagen", "Tiguan"), ("Volkswagen", "Atlas"), ("Volkswagen", "Jetta"),
+        ("Volvo", "XC60"), ("Volvo", "XC90"), ("Volvo", "S60"),
+        ("Porsche", "Cayenne"), ("Porsche", "Macan"),
+        ("Land Rover", "Range Rover Sport"), ("Land Rover", "Defender"),
+        ("MINI", "Cooper"), ("Alfa Romeo", "Stelvio"), ("Alfa Romeo", "Giulia"),
+        ("Jaguar", "F-PACE"), ("Jaguar", "XE"),
+    ],
+    "japanese": [
+        ("Toyota", "Camry"), ("Toyota", "RAV4"), ("Toyota", "Highlander"),
+        ("Honda", "Accord"), ("Honda", "CR-V"), ("Honda", "Pilot"),
+        ("Lexus", "RX 350"), ("Lexus", "ES 350"), ("Lexus", "NX 350"),
+        ("Mazda", "CX-5"), ("Mazda", "CX-50"), ("Subaru", "Outback"), ("Subaru", "Forester"),
+        ("Nissan", "Altima"), ("Nissan", "Rogue"), ("Infiniti", "QX60"),
+        ("Acura", "MDX"), ("Acura", "TLX"), ("Mitsubishi", "Outlander"),
+    ],
+    "american": [
+        ("Ford", "F-150"), ("Ford", "Explorer"), ("Ford", "Mustang"), ("Ford", "Edge"),
+        ("Chevrolet", "Silverado 1500"), ("Chevrolet", "Equinox"), ("Chevrolet", "Traverse"),
+        ("Cadillac", "XT5"), ("Cadillac", "Escalade"), ("Cadillac", "CT5"),
+        ("Jeep", "Grand Cherokee"), ("Jeep", "Wrangler"),
+        ("Ram", "1500"), ("Dodge", "Durango"),
+        ("Lincoln", "Nautilus"), ("GMC", "Sierra 1500"), ("Buick", "Enclave"),
+    ],
+    "korean": [
+        ("Hyundai", "Tucson"), ("Hyundai", "Santa Fe"), ("Hyundai", "Palisade"), ("Hyundai", "Sonata"),
+        ("Kia", "Sportage"), ("Kia", "Telluride"), ("Kia", "Sorento"), ("Kia", "K5"),
+        ("Genesis", "G80"), ("Genesis", "GV80"), ("Genesis", "GV70"),
+    ],
+    "luxury": [
+        ("BMW", "7 Series"), ("Mercedes-Benz", "S-Class"), ("Audi", "A8"),
+        ("Cadillac", "CT5"), ("Lexus", "LS 500"), ("Porsche", "Panamera"),
+        ("Genesis", "G90"), ("Lincoln", "Navigator"), ("Infiniti", "QX80"),
+    ],
+    "electric": [
+        ("Tesla", "Model 3"), ("Tesla", "Model Y"), ("Tesla", "Model S"), ("Tesla", "Model X"),
+        ("Rivian", "R1T"), ("Lucid", "Air"), ("BMW", "i4"),
+        ("Hyundai", "IONIQ 5"), ("Hyundai", "IONIQ 6"), ("Kia", "EV6"),
+        ("Audi", "e-tron"), ("Mercedes-Benz", "EQS"), ("Chevrolet", "Bolt EV"),
+        ("Ford", "Mustang Mach-E"), ("Volkswagen", "ID.4"),
+    ],
+}
+
+def query_inventory_by_makes(makes: list, max_price: Optional[int] = None,
+                              condition: Optional[str] = None, state: Optional[str] = None,
+                              sort_by: str = "score", *,
+                              max_mileage: Optional[int] = None,
+                              no_accidents: Optional[bool] = None,
+                              one_owner: Optional[bool] = None,
+                              drivetrain: Optional[str] = None,
+                              zip_code: Optional[str] = None,
+                              radius_miles: Optional[int] = None) -> list:
+    """Query the local DB for active listings from any of the given makes (category search)."""
+    if not makes:
+        return []
+    placeholders = ",".join("?" * len(makes))
+    wheres = [f"UPPER(make) IN ({placeholders})", "status='active'", "listing_price IS NOT NULL", "listing_price > 0"]
+    params: list = [m.upper() for m in makes]
+
+    if max_price:
+        wheres.append("listing_price <= ?"); params.append(max_price)
+    if condition == "new":
+        wheres.append("is_used=0")
+    elif condition == "used":
+        wheres.append("is_used=1 AND is_cpo=0")
+    elif condition == "cpo":
+        wheres.append("is_cpo=1")
+    if state:
+        wheres.append("UPPER(dealer_state)=?"); params.append(state.upper())
+    if drivetrain:
+        wheres.append("UPPER(drivetrain)=?"); params.append(drivetrain.upper())
+    if max_mileage:
+        wheres.append("mileage <= ?"); params.append(max_mileage)
+    if no_accidents:
+        wheres.append("accidents=0")
+    if one_owner:
+        wheres.append("one_owner=1")
+
+    order = {"score": "score DESC", "price": "listing_price ASC",
+              "discount": "discount_pct DESC", "newest": "first_seen_at DESC"}.get(sort_by, "score DESC")
+
+    sql = f"SELECT * FROM inventory WHERE {' AND '.join(wheres)} ORDER BY {order}"
+    conn = get_db()
+    rows = conn.execute(sql, params).fetchall()
+    conn.close()
+    results = [dict(r) for r in rows]
+
+    if zip_code and radius_miles:
+        coords = geocode_zip(zip_code)
+        if coords:
+            user_lat, user_lng = coords
+            in_range = []
+            for r in results:
+                dlat, dlng = r.get("dealer_lat"), r.get("dealer_lng")
+                if dlat and dlng:
+                    dist = haversine_miles(user_lat, user_lng, dlat, dlng)
+                    r["distance_miles"] = round(dist, 1)
+                    if dist <= radius_miles:
+                        in_range.append(r)
+                else:
+                    r["distance_miles"] = None
+                    in_range.append(r)
+            results = sorted(in_range, key=lambda x: (x["distance_miles"] is None, x.get("distance_miles", 9999)))
+    return results
+
+
+# ═══════════════════════════════════════════════════════════════
 # QUERY — read from inventory DB
 # ═══════════════════════════════════════════════════════════════
 
 def query_inventory(key: str, max_price: Optional[int] = None,
                     condition: Optional[str] = None, state: Optional[str] = None,
                     sort_by: str = "score", *,
+                    min_price: Optional[int] = None,
                     drivetrain: Optional[str] = None, max_mileage: Optional[int] = None,
                     color: Optional[str] = None, no_accidents: Optional[bool] = None,
                     one_owner: Optional[bool] = None,
                     year_from: Optional[int] = None,
+                    body_style: Optional[str] = None,
+                    fuel_type: Optional[str] = None,
                     zip_code: Optional[str] = None,
                     radius_miles: Optional[int] = None) -> List[dict]:
     """
@@ -604,6 +873,9 @@ def query_inventory(key: str, max_price: Optional[int] = None,
     if max_price:
         wheres.append("listing_price <= ?")
         params.append(max_price)
+    if min_price:
+        wheres.append("listing_price >= ?")
+        params.append(min_price)
     if condition == "new":
         wheres.append("is_used=0")
     elif condition == "used":
@@ -629,6 +901,20 @@ def query_inventory(key: str, max_price: Optional[int] = None,
     if year_from:
         wheres.append("year >= ?")
         params.append(year_from)
+    if body_style:
+        wheres.append("LOWER(body_style) LIKE ?")
+        params.append(f"%{body_style.lower()}%")
+    if fuel_type:
+        ft = fuel_type.lower()
+        if ft == "phev":
+            # DB stores values like "Plug-In Hybrid" — match both spellings
+            wheres.append("(LOWER(fuel) LIKE '%phev%' OR LOWER(fuel) LIKE '%plug-in%' OR LOWER(fuel) LIKE '%plug in%')")
+        elif ft == "hybrid":
+            # Hybrid but NOT plug-in
+            wheres.append("(LOWER(fuel) LIKE '%hybrid%' AND LOWER(fuel) NOT LIKE '%plug-in%' AND LOWER(fuel) NOT LIKE '%plug in%' AND LOWER(fuel) NOT LIKE '%phev%')")
+        else:
+            wheres.append("LOWER(fuel) LIKE ?")
+            params.append(f"%{ft}%")
 
     order = {
         "score":    "score DESC",
@@ -686,12 +972,18 @@ async def search(
     no_accidents: Optional[bool]= Query(None, description="true = 0 accidents only"),
     one_owner:    Optional[bool]= Query(None, description="true = single owner only"),
     year_from:    Optional[int] = Query(None, description="minimum model year, e.g. 2020"),
+    min_price:    Optional[int] = Query(None, description="minimum listing price in USD"),
+    body_style:   Optional[str] = Query(None, description="convertible | coupe | sedan | SUV | crossover | truck | hatchback | wagon"),
+    fuel_type:    Optional[str] = Query(None, description="gas | hybrid | electric | phev | diesel"),
     zip_code:     Optional[str] = Query(None, description="5-digit US zip code for geo radius search"),
     radius_miles: Optional[int] = Query(None, description="Search radius in miles around zip (default 100)"),
     sort_by:      str           = Query("score", description="score | price | discount | newest | distance"),
     page:         int           = Query(1, ge=1),
     per_page:     int           = Query(20, ge=1, le=100),
 ):
+    # Normalize model name (e.g. "TX350h" → "TX", "RX350" → "RX 350")
+    model = canonicalize_model(make, model)
+
     # Zip-based geo search takes priority over state filter
     eff_state  = None if zip_code else state
     eff_radius = radius_miles or (100 if zip_code else None)
@@ -704,12 +996,16 @@ async def search(
         if DATA_PROVIDER == "none":
             raise HTTPException(500, "No data provider configured. Set AUTO_DEV_API_KEY.")
         log.info(f"Cache MISS / stale — fetching from {DATA_PROVIDER}: {key}")
-        fresh, pages = fetch_from_api(make, model, year, eff_state, zip_code, eff_radius)
+        fresh, pages, resolved_model = fetch_with_retry(make, model, year, eff_state, zip_code, eff_radius)
         if not fresh:
             return {"results": [], "total": 0, "api_calls_used": pages,
                     "cached": False, "data_age_hours": 0,
                     "stats": {"min_price": None, "max_price": None, "avg_price": None,
                               "avg_discount": None, "best_discount": None, "top_states": []}}
+        # If retry found a canonical name different from what was passed in, re-key
+        if resolved_model != model:
+            model = resolved_model
+            key   = search_key(make, model, year, eff_state, zip_code, eff_radius)
         delta_sync(key, fresh, pages)
         api_calls_used = pages
         synced_now     = True
@@ -721,9 +1017,12 @@ async def search(
 
     # Query DB (zero API calls)
     listings = query_inventory(key, max_price, condition, eff_state, eff_sort,
+                               min_price=min_price or None,
                                drivetrain=drivetrain, max_mileage=max_mileage,
                                color=color, no_accidents=no_accidents, one_owner=one_owner,
-                               year_from=year_from, zip_code=zip_code, radius_miles=eff_radius)
+                               year_from=year_from, body_style=body_style or None,
+                               fuel_type=fuel_type or None,
+                               zip_code=zip_code, radius_miles=eff_radius)
 
     total = len(listings)
     start = (page - 1) * per_page
@@ -1021,32 +1320,110 @@ async def ai_chat(
             "total":   0,
         }
 
-    make         = intent.get("make", "")
-    model        = intent.get("model", "")
-    year         = intent.get("year")
-    state        = intent.get("state") or None
-    max_price    = intent.get("max_price")
-    condition    = intent.get("condition") or None
-    drivetrain   = intent.get("drivetrain") or None
-    max_mileage  = intent.get("max_mileage")
-    color        = intent.get("color") or None
-    no_acc       = intent.get("no_accidents", False)
-    one_own      = intent.get("one_owner", False)
-    zip_code     = intent.get("zip_code") or None
-    radius_miles = intent.get("radius_miles") or None
+    make          = intent.get("make", "")
+    model         = intent.get("model", "")
+    # Normalize model name before any lookups (e.g. "TX350h" → "TX")
+    model         = canonicalize_model(make, model)
+    year          = intent.get("year")
+    state         = intent.get("state") or None
+    max_price     = intent.get("max_price")
+    condition     = intent.get("condition") or None
+    drivetrain    = intent.get("drivetrain") or None
+    max_mileage   = intent.get("max_mileage")
+    color         = intent.get("color") or None
+    no_acc        = intent.get("no_accidents", False)
+    one_own       = intent.get("one_owner", False)
+    body_style    = intent.get("body_style") or None
+    fuel_type     = intent.get("fuel_type") or None
+    zip_code      = intent.get("zip_code") or None
+    radius_miles  = intent.get("radius_miles") or None
+    brand_category = intent.get("brand_category") or None
 
     # Zip-based geo search takes priority over state filter
     eff_state  = None if zip_code else state
     eff_radius = radius_miles or (100 if zip_code else None)
 
+    # ── BRAND CATEGORY path (e.g. "European cars under $50k") ──────────────
+    if brand_category and brand_category in BRAND_CATEGORIES and not intent.get("brand_was_specified"):
+        category_makes_models = BRAND_CATEGORIES[brand_category]
+        category_makes = list({m for m, _ in category_makes_models})
+
+        listings = query_inventory_by_makes(
+            category_makes, max_price=max_price, condition=condition, state=eff_state,
+            sort_by="score", max_mileage=max_mileage, no_accidents=no_acc,
+            one_owner=one_own, drivetrain=drivetrain,
+            zip_code=zip_code, radius_miles=eff_radius,
+        )
+
+        prices    = [l["listing_price"] for l in listings if l.get("listing_price")]
+        discounts = [l["discount_pct"] for l in listings if l.get("discount_pct")]
+
+        # Build suggested_alternatives from the full category list
+        # (de-duplicated by make) so the user can drill into any specific brand
+        seen_makes: set = set()
+        alts = []
+        for m, mdl in category_makes_models:
+            if m not in seen_makes:
+                seen_makes.add(m)
+                alts.append({"make": m, "model": mdl, "reason": f"Popular {brand_category.title()} model"})
+        intent["suggested_alternatives"] = alts
+
+        intent_display = {k: v for k, v in intent.items()
+                          if k not in ("suggested_alternatives",) and v not in (None, "", [], False)}
+
+        tool_calls = [
+            {
+                "name": "extract_search_intent",
+                "label": "Category Intent Extraction",
+                "model": "claude-haiku-4-5",
+                "icon": "",
+                "input": {"query": query},
+                "output": intent_display,
+                "duration_ms": None,
+            },
+            {
+                "name": "query_inventory_by_makes",
+                "label": f"Database Search — {brand_category.title()} brands",
+                "model": "SQLite",
+                "icon": "",
+                "input": {"makes": category_makes, **({"max_price": max_price} if max_price else {})},
+                "output": {
+                    "results_found": len(listings),
+                    "returned": min(20, len(listings)),
+                    "data_source": "local cache (no API calls — use chips below to fetch live data per brand)",
+                },
+                "duration_ms": None,
+            },
+        ]
+
+        return {
+            "intent":   intent,
+            "results":  listings[:20],
+            "total":    len(listings),
+            "api_calls": 0,
+            "brand_was_specified": False,
+            "brand_category": brand_category,
+            "suggested_alternatives": alts,
+            "tool_calls": tool_calls,
+            "stats": {
+                "avg_price":    round(sum(prices)/len(prices)) if prices else None,
+                "best_discount":max(discounts) if discounts else None,
+            }
+        }
+
+    # ── SINGLE BRAND path (normal search) ────────────────────────────────────
     key = search_key(make, model, year, eff_state, zip_code, eff_radius)
     api_calls = 0
     if is_stale(key):
         if DATA_PROVIDER == "none":
             return {"error": "No data provider configured. Set AUTO_DEV_API_KEY.", "intent": intent,
                     "results": [], "total": 0}
-        fresh, pages = fetch_from_api(make, model, year, eff_state, zip_code, eff_radius)
+        fresh, pages, resolved_model = fetch_with_retry(make, model, year, eff_state, zip_code, eff_radius)
         if fresh:
+            # Re-key if retry found a canonical model name (e.g. 'TX350h' → 'TX')
+            if resolved_model != model:
+                model = resolved_model
+                key   = search_key(make, model, year, eff_state, zip_code, eff_radius)
             delta_sync(key, fresh, pages)
         api_calls = pages
 
@@ -1063,11 +1440,14 @@ async def ai_chat(
         **({"color": color} if color else {}),
         **({"no_accidents": True} if no_acc else {}),
         **({"one_owner": True} if one_own else {}),
+        **({"body_style": body_style} if body_style else {}),
+        **({"fuel_type": fuel_type} if fuel_type else {}),
     }
 
     listings = query_inventory(key, max_price, condition, eff_state, "score",
                                drivetrain=drivetrain, max_mileage=max_mileage,
                                color=color, no_accidents=no_acc, one_owner=one_own,
+                               body_style=body_style, fuel_type=fuel_type,
                                zip_code=zip_code, radius_miles=eff_radius)
 
     prices    = [l["listing_price"] for l in listings if l.get("listing_price")]
@@ -1082,7 +1462,7 @@ async def ai_chat(
             "name": "extract_search_intent",
             "label": "Intent Extraction",
             "model": "claude-haiku-4-5",
-            "icon": "🧠",
+            "icon": "",
             "input": {"query": query},
             "output": intent_display,
             "duration_ms": None,
@@ -1091,7 +1471,7 @@ async def ai_chat(
             "name": "query_inventory",
             "label": "Database Search",
             "model": "SQLite",
-            "icon": "🗄️",
+            "icon": "",
             "input": db_params,
             "output": {
                 "results_found": len(listings),
@@ -1108,6 +1488,7 @@ async def ai_chat(
         "total":    len(listings),
         "api_calls": api_calls,
         "brand_was_specified": intent.get("brand_was_specified", True),
+        "brand_category": brand_category,
         "suggested_alternatives": intent.get("suggested_alternatives", []),
         "tool_calls": tool_calls,
         "stats": {
