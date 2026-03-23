@@ -100,6 +100,8 @@ def extract_search_intent(query: str) -> dict:
                 },
                 "no_accidents": {"type": "boolean", "description": "True if user wants accident-free vehicles only"},
                 "one_owner":    {"type": "boolean", "description": "True if user wants single-owner vehicles"},
+                "min_price":    {"type": "integer", "description": "Minimum listing price in USD. Set when user says 'over $X', 'at least $X', 'between $X and $Y'."},
+                "year_from":    {"type": "integer", "description": "Minimum model year. Set when user says '2022 or newer', '2021+', 'recent model year', 'last N years'."},
                 "zip_code":     {"type": "string",  "description": "5-digit US ZIP code if the user mentions one, e.g. 'near 30047', 'within 90210'. When zip_code is set, do NOT also set state."},
                 "radius_miles": {"type": "integer", "description": "Search radius in miles around the ZIP code. If a ZIP is given but no radius mentioned, default to 100."},
                 "brand_category": {
@@ -142,67 +144,124 @@ def extract_search_intent(query: str) -> dict:
     try:
         resp = c.messages.create(
             model="claude-haiku-4-5-20251001",
-            max_tokens=800,
+            max_tokens=1500,
             tools=tools,
             tool_choice={"type": "any"},
-            system="""You are a car search expert and concierge. Extract structured search parameters from natural language.
+            system="""You are a car search concierge. Extract precise structured search parameters from natural language. Always call set_search_params.
 
-FEATURE MATCHING RULES — when user describes features without naming a brand:
-- 3-row SUV + Bose 12 speakers → Hyundai Palisade (best overall value) or Kia Telluride
-- 3-row SUV + Bowers & Wilkins → Volvo XC90
-- 3-row SUV + Bang & Olufsen → Audi Q7
-- 3-row SUV + Revel audio / 28 speakers → Lincoln Aviator
-- 3-row SUV + ELS Studio / 16 speakers → Acura MDX
-- 3-row SUV + Bose 17 speakers → Infiniti QX60
-- 3-row SUV + AKG audio → Cadillac XT6
-- 3-row SUV + Meridian → Land Rover Discovery
-- luxury SUV (no 3rd row) + B&W → BMW X5
-- luxury SUV (no 3rd row) + Burmester → Mercedes GLE
-- family SUV under $55k → Toyota Highlander or Kia Telluride
-- sporty sedan → BMW 3 Series or Audi A4
-- red brake calipers standard → BMW M-Sport, Audi S-line, Volvo R-Design
-- 'clean history' / 'accident-free' / 'no accidents' → no_accidents=true
-- 'low miles' → max_mileage=30000; 'very low miles' → 15000
-- Atlanta / GA → state=GA; Southeast → state=GA; Texas → state=TX
-- 'near 30047' / 'within 50 miles of 90210' / 'zip 77001' → zip_code=that zip, radius_miles=50 (or 100 if unspecified)
-- When zip_code is set, do NOT also set state — zip takes priority
-- 'affordable' / 'budget' → used/cpo condition
-- 'certified' / 'CPO' → condition=cpo
-- 'convertible roof' / 'drop top' / 'ragtop' / 'cabriolet' / 'open top' / 'open roof car' → body_style=convertible
-- 'coupe with convertible roof' / 'convertible coupe' → body_style=convertible (NOT coupe — the roof type overrides)
-- 'hardtop coupe' / 'fixed roof coupe' → body_style=coupe
-- 'sedan' / '4-door' → body_style=sedan; 'SUV' / 'crossover' → body_style=SUV or crossover; 'truck' / 'pickup' → body_style=truck
+PRICE PARSING:
+- "under 50" / "under 50k" / "below $50,000" / "fifty thousand" / "50 grand" → max_price=50000
+- "around $45k" / "approx 45k" / "roughly 45" → max_price=47000 (add ~5% buffer)
+- "between 30k and 50k" / "$30-50k" / "30 to 50 thousand" → min_price=30000, max_price=50000
+- "over $30k" / "at least $30,000" / "minimum 30k" → min_price=30000
+- Numbers without $ or k under 500 are assumed thousands: "under 45" → max_price=45000
+- "cheapest" / "most affordable" / "on a budget" → condition=used (no price filter unless stated)
 
-MODEL NAME RULES — use the exact API model name, not the powertrain variant:
-- Lexus TX / TX350 / TX350h / TX500h / TX500 / TX550h → model="TX" (all TX powertrains share one model name)
-- Lexus RX350 → model="RX 350"; RX450h → model="RX 450h"; RX500h → model="RX 500h"
-- Lexus NX350 → model="NX 350"; NX450h → model="NX 450h+"
-- Lexus ES350 → model="ES 350"; ES300h → model="ES 300h"
-- Lexus GX460 → model="GX 460"; GX550 → model="GX 550"
-- Toyota RAV4 Hybrid → model="RAV4 Hybrid"; RAV4 Prime → model="RAV4 Prime"
-- Ford F150 / F-150 → model="F-150"
-- Mercedes C300 → model="C 300"; GLE350 → model="GLE 350"; GLE450 → model="GLE 450"
-- Hyundai IONIQ 5 / Ioniq5 → model="IONIQ 5"; IONIQ 6 → model="IONIQ 6"
-- BMW X5M → model="X5 M"; M3 Competition → model="M3 Competition"
+YEAR PARSING:
+- "2022 or newer" / "2022+" / "2022 and up" → year_from=2022
+- "recent" / "last 2 years" / "last 3 years" (current year is 2026) → year_from=2024 or 2023
+- "2022 model" / "a 2022" → year=2022 (exact); omit year_from
 
-BRAND CATEGORY RULES — when the user refers to a regional/type group instead of a specific brand:
-- 'European cars' / 'European brands' / 'cars from Europe' → brand_category='european', brand_was_specified=False
-  European brands in US: BMW, Mercedes-Benz, Audi, Volkswagen, Volvo, Porsche, Land Rover, MINI, Alfa Romeo, Jaguar, Fiat
-- 'Japanese cars' / 'Japanese brands' / 'JDM' → brand_category='japanese', brand_was_specified=False
-  Japanese brands: Toyota, Honda, Lexus, Mazda, Subaru, Nissan, Infiniti, Acura, Mitsubishi
-- 'American cars' / 'domestic cars' → brand_category='american', brand_was_specified=False
-  American brands: Ford, Chevrolet, Cadillac, Jeep, Dodge, Ram, Lincoln, Buick, GMC
-- 'Korean cars' / 'Korean brands' → brand_category='korean', brand_was_specified=False
-  Korean brands: Hyundai, Kia, Genesis
-- 'Luxury cars' / 'premium brands' → brand_category='luxury', brand_was_specified=False
-- 'Electric cars' / 'EVs' / 'BEV' → brand_category='electric', brand_was_specified=False
+LOCATION — convert city/region mentions to 2-letter state codes:
+  New York/NYC/Manhattan/Brooklyn/Queens/Long Island/NJ → NY
+  Los Angeles/LA/SoCal/Hollywood/Burbank/Pasadena/Orange County/Long Beach → CA
+  San Francisco/SF/Bay Area/Silicon Valley/San Jose/Oakland/Palo Alto → CA
+  San Diego/Riverside/Inland Empire/Anaheim → CA | Sacramento/Fresno/Bakersfield → CA
+  Chicago/Chicagoland/Naperville → IL | Houston/greater Houston/Katy/Sugar Land → TX
+  Dallas/DFW/Fort Worth/Irving/Plano/Frisco/Austin/San Antonio/El Paso → TX
+  Phoenix/Scottsdale/Tempe/Mesa/Chandler/Gilbert or Tucson → AZ
+  Philadelphia/Philly/South Jersey → PA | Pittsburgh/Harrisburg → PA
+  Miami/Fort Lauderdale/Boca Raton/West Palm/Orlando/Tampa/Jacksonville/South Florida → FL
+  Atlanta/ATL/Georgia/Southeast → GA | Charlotte/Raleigh/Durham/Research Triangle/Greensboro → NC
+  Denver/Boulder/Colorado Springs/Colorado → CO | Seattle/Tacoma/Bellevue/Pacific Northwest → WA
+  Nashville/Memphis/Knoxville/Tennessee → TN | Las Vegas/Henderson/Reno → NV
+  Boston/Cambridge/Worcester/New England → MA | Portland/Eugene/Oregon → OR
+  Detroit/Motor City/Ann Arbor/Grand Rapids/Michigan → MI
+  Minneapolis/Twin Cities/Saint Paul → MN | New Orleans/Baton Rouge/Louisiana → LA
+  Baltimore/Annapolis/Maryland → MD | Louisville/Lexington/Kentucky → KY
+  Salt Lake City/SLC/Utah → UT | Virginia Beach/Richmond/Northern Virginia/DC suburbs → VA
+  Kansas City/St. Louis/Springfield/Missouri → MO | Milwaukee/Madison/Wisconsin → WI
+  Columbus/Cleveland/Cincinnati/Ohio → OH | Indianapolis/Indiana → IN
+  Albuquerque/Santa Fe/New Mexico → NM
+  When zip_code is set: do NOT also set state. zip_code takes full priority.
 
-For category queries, pick the BEST single representative make+model for the primary result BUT populate
-suggested_alternatives with ALL notable brands/models from that category matching the price/features,
-so the user can explore each. max_price must be set from the budget constraint if mentioned.
+MILEAGE:
+  "low mileage/miles" → max_mileage=30000 | "very low" / "barely driven" → max_mileage=15000
+  "under Xk miles" / "less than X miles" → max_mileage=X (×1000 if k suffix)
 
-IMPORTANT: Always pick ONE best make+model as the primary. Then list alternatives in suggested_alternatives.
-Set brand_was_specified=false when recommending based on features or brand category.""",
+CONDITION:
+  "certified" / "CPO" / "certified pre-owned" → cpo | "new" / "brand new" → new
+  "used" / "pre-owned" / "second-hand" → used | "affordable" / "budget" → used
+
+FEATURE → CAR matching (when no brand named, set brand_was_specified=false):
+  3-ROW SUVs by audio: Bose 12sp/Harman → Hyundai Palisade; B&W/Bowers&Wilkins → Volvo XC90;
+    Bang&Olufsen → Audi Q7; Revel 28sp → Lincoln Aviator; ELS Studio 16sp → Acura MDX;
+    Bose 17sp → Infiniti QX60; AKG → Cadillac XT6; Meridian → Land Rover Discovery
+  LUXURY 2-ROW SUVs: B&W → BMW X5; Burmester → Mercedes GLE or GLC
+  FAMILY SUV under $55k: Toyota Highlander or Kia Telluride
+  FULL-SIZE TRUCK: Ford F-150 (default); Ram 1500 or Chevy Silverado as alts
+  MIDSIZE TRUCK: Toyota Tacoma or Ford Ranger
+  SPORTY/PERFORMANCE SEDAN: BMW 3 Series or Audi A4
+  MUSCLE CAR / PONY CAR: Ford Mustang or Dodge Challenger
+  RELIABLE FAMILY SEDAN: Toyota Camry or Honda Accord
+  RELIABLE COMPACT: Toyota Corolla or Honda Civic
+  MINIVAN: Honda Odyssey or Toyota Sienna
+  BEST HYBRID SUV: Toyota RAV4 Hybrid or Ford Escape Hybrid
+  HYBRID SEDAN: Toyota Camry Hybrid or Honda Accord Hybrid
+  EV under $45k: Tesla Model 3 or Chevrolet Equinox EV
+  LUXURY EV: Tesla Model S or BMW i4
+  OFF-ROAD / OVERLANDING: Jeep Wrangler or Toyota 4Runner
+  SPORTS CAR under $40k: Toyota GR86 or Mazda MX-5 Miata
+  BUDGET FIRST CAR under $20k: Toyota Corolla (used) or Honda Civic (used)
+  red brake calipers standard → BMW M-Sport or Audi S-line
+
+MODEL NAME NORMALIZATION (use canonical API form):
+  Lexus TX/TX350/TX500/TX550h → "TX" | RX350 → "RX 350" | RX450h → "RX 450h" | RX500h → "RX 500h"
+  NX350 → "NX 350" | NX450h → "NX 450h+" | ES350 → "ES 350" | GX460 → "GX 460" | GX550 → "GX 550"
+  Mercedes C300 → "C 300" | GLE350 → "GLE 350" | GLE450 → "GLE 450" | E350 → "E 350" | E450 → "E 450"
+  GLS450 → "GLS 450" | S500 → "S 500" | S580 → "S 580" | AMG GT → "AMG GT"
+  BMW X5M → "X5 M" | M3 Competition → "M3 Competition" | M5 Comp → "M5 Competition"
+  IONIQ5/Ioniq 5 → "IONIQ 5" | IONIQ6 → "IONIQ 6" | Ioniq9 → "IONIQ 9"
+  Ford F150/F 150 → "F-150" | Bronco Sport ≠ Bronco (different models)
+  Toyota RAV4 Hybrid → "RAV4 Hybrid" | RAV4 Prime → "RAV4 Prime"
+  Genesis GV80/GV70/G80/G90 → use as-is
+  Porsche Cayenne/Macan/911/Panamera → use as-is
+
+BODY STYLE:
+  "convertible"/"drop top"/"ragtop"/"cabriolet"/"open top" → convertible
+  "coupe with convertible roof"/"convertible coupe" → convertible (NOT coupe)
+  "hardtop coupe"/"2-door"/"fixed roof coupe" → coupe
+  "sedan"/"4-door" → sedan | "SUV" → SUV | "crossover" → crossover
+  "truck"/"pickup" → truck | "van"/"minivan" → wagon
+
+FUEL TYPE:
+  "EV"/"electric"/"battery"/"BEV" → electric | "hybrid"/"HEV" → hybrid
+  "plug-in"/"PHEV"/"plug in hybrid" → phev | "gas"/"gasoline"/"petrol"/"ICE" → gas | "diesel" → diesel
+
+BRAND CATEGORIES (set when user says a group, not a specific brand):
+  "European cars/brands" → brand_category=european, brand_was_specified=false
+    (BMW, Mercedes-Benz, Audi, Volkswagen, Volvo, Porsche, Land Rover, MINI, Alfa Romeo, Jaguar)
+  "Japanese cars/JDM" → brand_category=japanese
+    (Toyota, Honda, Lexus, Mazda, Subaru, Nissan, Infiniti, Acura, Mitsubishi)
+  "American cars/domestic" → brand_category=american
+    (Ford, Chevrolet, Cadillac, Jeep, Dodge, Ram, Lincoln, Buick, GMC)
+  "Korean cars" → brand_category=korean (Hyundai, Kia, Genesis)
+  "Luxury cars/premium" → brand_category=luxury
+    (BMW, Mercedes-Benz, Audi, Lexus, Cadillac, Lincoln, Porsche, Volvo, Genesis, Infiniti, Acura, Land Rover)
+  "Electric cars/EVs/BEVs" → brand_category=electric
+  For category queries: set max_price from budget if mentioned; pick BEST representative make+model;
+  populate suggested_alternatives with ALL notable brands in the category.
+
+ACCIDENTS / HISTORY:
+  "clean history"/"accident-free"/"no accidents"/"clean Carfax" → no_accidents=true
+  "single owner"/"one owner"/"1 owner" → one_owner=true
+
+VEHICLE HISTORY:
+  'clean history' / 'accident-free' / 'no accidents' / 'clean Carfax' → no_accidents=true
+  'single owner' / 'one owner' / '1 owner' → one_owner=true
+
+IMPORTANT: Always pick ONE best make+model as primary. Set brand_was_specified=false when recommending.
+List alternatives in suggested_alternatives (4-6 items) when brand_was_specified=false.""",
             messages=[{"role": "user", "content": f"Parse this car search query: {query}"}]
         )
         for block in resp.content:
