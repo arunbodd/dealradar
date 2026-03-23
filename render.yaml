@@ -17,3 +17,10 @@ services:
         sync: false
       - key: DB_PATH
         value: /tmp/inventory.db
+      # LangSmith tracing — optional but recommended for monitoring the two-stage pipeline
+      - key: LANGSMITH_API_KEY
+        sync: false
+      - key: LANGCHAIN_PROJECT
+        value: dealradar
+      - key: LANGCHAIN_TRACING_V2
+        value: "true"
