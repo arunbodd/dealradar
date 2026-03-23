@@ -550,7 +550,8 @@ def fetch_from_api(make: str, model: str, year: Optional[int] = None,
             if resp.status_code != 200:
                 log.warning(f"  [auto.dev] {resp.status_code} on page {page}")
                 break
-            batch = resp.json().get("data", [])
+            raw_data = resp.json().get("data", [])
+            batch = raw_data if isinstance(raw_data, list) else []
             pages += 1
             if not batch:
                 break
