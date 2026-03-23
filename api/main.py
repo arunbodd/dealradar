@@ -788,6 +788,8 @@ BRAND_CATEGORIES: dict[str, list[tuple[str, str]]] = {
 def query_inventory_by_makes(makes: list, max_price: Optional[int] = None,
                               condition: Optional[str] = None, state: Optional[str] = None,
                               sort_by: str = "score", *,
+                              min_price: Optional[int] = None,
+                              year_from: Optional[int] = None,
                               max_mileage: Optional[int] = None,
                               no_accidents: Optional[bool] = None,
                               one_owner: Optional[bool] = None,
@@ -803,6 +805,10 @@ def query_inventory_by_makes(makes: list, max_price: Optional[int] = None,
 
     if max_price:
         wheres.append("listing_price <= ?"); params.append(max_price)
+    if min_price:
+        wheres.append("listing_price >= ?"); params.append(min_price)
+    if year_from:
+        wheres.append("year >= ?"); params.append(year_from)
     if condition == "new":
         wheres.append("is_used=0")
     elif condition == "used":
@@ -1270,16 +1276,29 @@ async def ai_chat(
     Routes automatically: if no make/model can be extracted, answers as a concierge QA.
     """
     try:
-        from ai_engine import extract_search_intent, answer_car_question
+        from ai_engine import answer_car_question
     except Exception as e:
         log.error(f"AI engine import failed: {e}")
         raise HTTPException(503, f"AI engine unavailable: {e}")
 
+    # Two-stage pipeline: Stage 1 normalises the raw query (free-form LLM),
+    # Stage 2 extracts structured params via tool_use on the clean text.
+    enriched_query = query   # fallback if pipeline unavailable
+    pipeline_timing: dict = {}
     try:
-        intent = extract_search_intent(query)
+        from agents import run_pipeline
+        pipeline_state = run_pipeline(query, context_make, context_model)
+        intent         = pipeline_state["intent"]
+        enriched_query = pipeline_state["enriched_query"] or query
+        pipeline_timing = pipeline_state.get("timing", {})
     except Exception as e:
-        log.error(f"Intent extraction failed: {e}")
-        return {"error": str(e), "intent": {}, "results": [], "total": 0}
+        log.warning(f"LangGraph pipeline failed, falling back to direct extraction: {e}")
+        try:
+            from ai_engine import extract_search_intent
+            intent = extract_search_intent(query)
+        except Exception as e2:
+            log.error(f"Intent extraction failed: {e2}")
+            return {"error": str(e2), "intent": {}, "results": [], "total": 0}
 
     if not intent.get("make") or not intent.get("model"):
         # QA mode — answer as an automotive concierge
@@ -1328,6 +1347,8 @@ async def ai_chat(
     year          = intent.get("year")
     state         = intent.get("state") or None
     max_price     = intent.get("max_price")
+    min_price     = intent.get("min_price")
+    year_from     = intent.get("year_from")
     condition     = intent.get("condition") or None
     drivetrain    = intent.get("drivetrain") or None
     max_mileage   = intent.get("max_mileage")
@@ -1354,6 +1375,7 @@ async def ai_chat(
             sort_by="score", max_mileage=max_mileage, no_accidents=no_acc,
             one_owner=one_own, drivetrain=drivetrain,
             zip_code=zip_code, radius_miles=eff_radius,
+            min_price=min_price, year_from=year_from,
         )
 
         prices    = [l["listing_price"] for l in listings if l.get("listing_price")]
@@ -1374,13 +1396,22 @@ async def ai_chat(
 
         tool_calls = [
             {
-                "name": "extract_search_intent",
-                "label": "Category Intent Extraction",
+                "name": "understand_query",
+                "label": "Stage 1 — Query Understanding",
                 "model": "claude-haiku-4-5",
-                "icon": "",
+                "icon": "🔍",
                 "input": {"query": query},
+                "output": {"enriched": enriched_query},
+                "duration_ms": pipeline_timing.get("understand_ms"),
+            },
+            {
+                "name": "extract_search_intent",
+                "label": "Stage 2 — Intent Extraction",
+                "model": "claude-haiku-4-5",
+                "icon": "🎯",
+                "input": {"query": enriched_query},
                 "output": intent_display,
-                "duration_ms": None,
+                "duration_ms": pipeline_timing.get("extract_ms"),
             },
             {
                 "name": "query_inventory_by_makes",
@@ -1443,13 +1474,16 @@ async def ai_chat(
         **({"one_owner": True} if one_own else {}),
         **({"body_style": body_style} if body_style else {}),
         **({"fuel_type": fuel_type} if fuel_type else {}),
+        **({"min_price": min_price} if min_price else {}),
+        **({"year_from": year_from} if year_from else {}),
     }
 
     listings = query_inventory(key, max_price, condition, eff_state, "score",
                                drivetrain=drivetrain, max_mileage=max_mileage,
                                color=color, no_accidents=no_acc, one_owner=one_own,
                                body_style=body_style, fuel_type=fuel_type,
-                               zip_code=zip_code, radius_miles=eff_radius)
+                               zip_code=zip_code, radius_miles=eff_radius,
+                               min_price=min_price, year_from=year_from)
 
     prices    = [l["listing_price"] for l in listings if l.get("listing_price")]
     discounts = [l["discount_pct"] for l in listings if l.get("discount_pct")]
@@ -1460,13 +1494,22 @@ async def ai_chat(
 
     tool_calls = [
         {
-            "name": "extract_search_intent",
-            "label": "Intent Extraction",
+            "name": "understand_query",
+            "label": "Stage 1 — Query Understanding",
             "model": "claude-haiku-4-5",
-            "icon": "",
+            "icon": "🔍",
             "input": {"query": query},
+            "output": {"enriched": enriched_query},
+            "duration_ms": pipeline_timing.get("understand_ms"),
+        },
+        {
+            "name": "extract_search_intent",
+            "label": "Stage 2 — Intent Extraction",
+            "model": "claude-haiku-4-5",
+            "icon": "🎯",
+            "input": {"query": enriched_query},
             "output": intent_display,
-            "duration_ms": None,
+            "duration_ms": pipeline_timing.get("extract_ms"),
         },
         {
             "name": "query_inventory",
