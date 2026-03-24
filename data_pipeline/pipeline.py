@@ -286,34 +286,25 @@ def run_pipeline(make: str, model: str,
 
 
 def _print_top_deals(results: list, label: str, top_n: int = 10):
-    print(f"\n{'='*75}")
-    print(f"  TOP {top_n} DEALS — {label}")
-    print(f"{'='*75}")
-    print(f"{'#':<3} {'Dealer':<32} {'City,ST':<18} {'Price':>8} {'MSRP':>8} {'Disc%':>6} {'Score':>6} {'Cond'}")
-    print(f"{'-'*75}")
-
+    SEP = "=" * 75
+    HDR = f"{'#':<3} {'Dealer':<32} {'City,ST':<18} {'Price':>8} {'MSRP':>8} {'Disc%':>6} {'Score':>6} {'Cond'}"
+    print(f"\n{SEP}\n  TOP {top_n} DEALS — {label}\n{SEP}\n{HDR}\n{'-'*75}")
     for i, r in enumerate(results[:top_n], 1):
-        price   = r.get("listing_price")
-        msrp    = r.get("base_msrp")
-        disc    = r.get("discount_pct", 0)
-        score   = r.get("score", 0)
-        dealer  = (r.get("dealer_name") or "")[:31]
+        price, msrp = r.get("listing_price"), r.get("base_msrp")
+        p_str = f"${price:,.0f}" if price else "N/A"
+        m_str = f"${msrp:,.0f}"  if msrp  else "N/A"
+        cond  = "CPO" if r.get("is_cpo") else ("New" if not r.get("is_used") else "Used")
         city_st = f"{r.get('dealer_city','')}, {r.get('dealer_state','')}"
-        cond    = "CPO" if r.get("is_cpo") else ("New" if not r.get("is_used") else "Used")
-        p_str   = f"${price:,.0f}" if price else "N/A"
-        m_str   = f"${msrp:,.0f}"  if msrp  else "N/A"
-        print(f"{i:<3} {dealer:<32} {city_st:<18} {p_str:>8} {m_str:>8} {disc:>5.1f}% {score:>5.3f} {cond}")
-
-    print(f"{'='*75}")
-    best = results[0]
+        print(f"{i:<3} {(r.get('dealer_name') or '')[:31]:<32} {city_st:<18} "
+              f"{p_str:>8} {m_str:>8} {r.get('discount_pct',0):>5.1f}% {r.get('score',0):>5.3f} {cond}")
+    best    = results[0]
     savings = (best.get("base_msrp") or 0) - (best.get("listing_price") or 0)
-    print(f"\n  BEST DEAL: {best.get('year')} {best.get('make')} {best.get('model')} {best.get('trim') or ''}")
-    print(f"  Dealer :  {best.get('dealer_name')} — {best.get('dealer_city')}, {best.get('dealer_state')}")
-    print(f"  Price  :  ${best.get('listing_price'):,.0f}  (MSRP: ${best.get('base_msrp'):,.0f})")
-    print(f"  Saving :  ${savings:,.0f}  ({best.get('discount_pct',0):.1f}% off MSRP)")
-    print(f"  VIN    :  {best.get('vin')}")
-    print(f"  Carfax :  {best.get('carfax_url') or 'N/A'}")
-    print(f"  Score  :  {best.get('score'):.4f}\n")
+    print(f"{SEP}\n  BEST DEAL: {best.get('year')} {best.get('make')} {best.get('model')} {best.get('trim') or ''}")
+    print(f"  Dealer : {best.get('dealer_name')} — {best.get('dealer_city')}, {best.get('dealer_state')}")
+    print(f"  Price  : ${best.get('listing_price'):,.0f}  (MSRP: ${best.get('base_msrp'):,.0f})")
+    print(f"  Saving : ${savings:,.0f}  ({best.get('discount_pct',0):.1f}% off MSRP)")
+    print(f"  VIN    : {best.get('vin')}\n  Carfax : {best.get('carfax_url') or 'N/A'}")
+    print(f"  Score  : {best.get('score'):.4f}\n")
 
 
 # ─────────────────────────────────────────────────────────────

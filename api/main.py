@@ -409,6 +409,68 @@ def get_total_api_calls() -> int:
 
 
 # ═══════════════════════════════════════════════════════════════
+# SHARED QUERY HELPERS
+# ═══════════════════════════════════════════════════════════════
+
+def _apply_filters(wheres: list, params: list, *,
+                   max_price=None, min_price=None, condition=None, state=None,
+                   drivetrain=None, max_mileage=None, color=None, body_style=None,
+                   no_accidents=None, one_owner=None, year_from=None):
+    """Append WHERE clauses and params for common inventory filters (in-place)."""
+    if max_price:    wheres.append("listing_price <= ?");           params.append(max_price)
+    if min_price:    wheres.append("listing_price >= ?");           params.append(min_price)
+    if condition == "new":    wheres.append("is_used=0")
+    elif condition == "used": wheres.append("is_used=1 AND is_cpo=0")
+    elif condition == "cpo":  wheres.append("is_cpo=1")
+    if state:        wheres.append("UPPER(dealer_state)=?");        params.append(state.upper())
+    if drivetrain:   wheres.append("UPPER(drivetrain)=?");          params.append(drivetrain.upper())
+    if max_mileage:  wheres.append("mileage <= ?");                 params.append(max_mileage)
+    if color:        wheres.append("LOWER(exterior_color) LIKE ?"); params.append(f"%{color.lower()}%")
+    if no_accidents: wheres.append("accidents=0")
+    if one_owner:    wheres.append("one_owner=1")
+    if year_from:    wheres.append("year >= ?");                    params.append(year_from)
+    if body_style:   wheres.append("LOWER(body_style) LIKE ?");     params.append(f"%{body_style.lower()}%")
+
+
+def _geo_filter(results: list, zip_code: str, radius_miles: int) -> list:
+    """Post-filter results by Haversine distance from a ZIP code, adding distance_miles."""
+    coords = geocode_zip(zip_code)
+    if not coords:
+        return results
+    user_lat, user_lng = coords
+    in_range = []
+    for r in results:
+        dlat, dlng = r.get("dealer_lat"), r.get("dealer_lng")
+        if dlat and dlng:
+            dist = haversine_miles(user_lat, user_lng, dlat, dlng)
+            r["distance_miles"] = round(dist, 1)
+            if dist <= radius_miles:
+                in_range.append(r)
+        else:
+            r["distance_miles"] = None
+            in_range.append(r)
+    return sorted(in_range, key=lambda x: (x["distance_miles"] is None, x.get("distance_miles", 9999)))
+
+
+def _build_stats(listings: list) -> dict:
+    """Compute summary statistics (prices, discounts, top states) from listing dicts."""
+    prices    = [l["listing_price"] for l in listings if l.get("listing_price")]
+    discounts = [l["discount_pct"]  for l in listings if l.get("discount_pct")]
+    states_ct: dict = {}
+    for l in listings:
+        s = l.get("dealer_state", "?")
+        states_ct[s] = states_ct.get(s, 0) + 1
+    return {
+        "min_price":     min(prices)    if prices    else None,
+        "max_price":     max(prices)    if prices    else None,
+        "avg_price":     round(sum(prices) / len(prices))          if prices    else None,
+        "avg_discount":  round(sum(discounts) / len(discounts), 1) if discounts else None,
+        "best_discount": max(discounts) if discounts else None,
+        "top_states":    sorted(states_ct.items(), key=lambda x: -x[1])[:5],
+    }
+
+
+# ═══════════════════════════════════════════════════════════════
 # NORMALIZE — auto.dev raw → flat dict
 # ═══════════════════════════════════════════════════════════════
 
@@ -803,28 +865,9 @@ def query_inventory_by_makes(makes: list, max_price: Optional[int] = None,
     wheres = [f"UPPER(make) IN ({placeholders})", "status='active'", "listing_price IS NOT NULL", "listing_price > 0"]
     params: list = [m.upper() for m in makes]
 
-    if max_price:
-        wheres.append("listing_price <= ?"); params.append(max_price)
-    if min_price:
-        wheres.append("listing_price >= ?"); params.append(min_price)
-    if year_from:
-        wheres.append("year >= ?"); params.append(year_from)
-    if condition == "new":
-        wheres.append("is_used=0")
-    elif condition == "used":
-        wheres.append("is_used=1 AND is_cpo=0")
-    elif condition == "cpo":
-        wheres.append("is_cpo=1")
-    if state:
-        wheres.append("UPPER(dealer_state)=?"); params.append(state.upper())
-    if drivetrain:
-        wheres.append("UPPER(drivetrain)=?"); params.append(drivetrain.upper())
-    if max_mileage:
-        wheres.append("mileage <= ?"); params.append(max_mileage)
-    if no_accidents:
-        wheres.append("accidents=0")
-    if one_owner:
-        wheres.append("one_owner=1")
+    _apply_filters(wheres, params, max_price=max_price, min_price=min_price, condition=condition,
+                   state=state, drivetrain=drivetrain, max_mileage=max_mileage,
+                   no_accidents=no_accidents, one_owner=one_owner, year_from=year_from)
 
     order = {"score": "score DESC", "price": "listing_price ASC",
               "discount": "discount_pct DESC", "newest": "first_seen_at DESC"}.get(sort_by, "score DESC")
@@ -836,21 +879,7 @@ def query_inventory_by_makes(makes: list, max_price: Optional[int] = None,
     results = [dict(r) for r in rows]
 
     if zip_code and radius_miles:
-        coords = geocode_zip(zip_code)
-        if coords:
-            user_lat, user_lng = coords
-            in_range = []
-            for r in results:
-                dlat, dlng = r.get("dealer_lat"), r.get("dealer_lng")
-                if dlat and dlng:
-                    dist = haversine_miles(user_lat, user_lng, dlat, dlng)
-                    r["distance_miles"] = round(dist, 1)
-                    if dist <= radius_miles:
-                        in_range.append(r)
-                else:
-                    r["distance_miles"] = None
-                    in_range.append(r)
-            results = sorted(in_range, key=lambda x: (x["distance_miles"] is None, x.get("distance_miles", 9999)))
+        results = _geo_filter(results, zip_code, radius_miles)
     return results
 
 
@@ -861,6 +890,8 @@ def query_inventory_by_makes(makes: list, max_price: Optional[int] = None,
 def query_inventory(key: str, max_price: Optional[int] = None,
                     condition: Optional[str] = None, state: Optional[str] = None,
                     sort_by: str = "score", *,
+                    make: Optional[str] = None,
+                    model: Optional[str] = None,
                     min_price: Optional[int] = None,
                     drivetrain: Optional[str] = None, max_mileage: Optional[int] = None,
                     color: Optional[str] = None, no_accidents: Optional[bool] = None,
@@ -872,44 +903,29 @@ def query_inventory(key: str, max_price: Optional[int] = None,
     """
     Read active listings from inventory DB.
     All filtering/sorting happens in SQLite — zero API calls.
-    """
-    wheres = ["search_key=?", "status='active'", "listing_price IS NOT NULL", "listing_price > 0"]
-    params = [key]
 
-    if max_price:
-        wheres.append("listing_price <= ?")
-        params.append(max_price)
-    if min_price:
-        wheres.append("listing_price >= ?")
-        params.append(min_price)
-    if condition == "new":
-        wheres.append("is_used=0")
-    elif condition == "used":
-        wheres.append("is_used=1 AND is_cpo=0")
-    elif condition == "cpo":
-        wheres.append("is_cpo=1")
-    if state:
-        wheres.append("UPPER(dealer_state)=?")
-        params.append(state.upper())
-    if drivetrain:
-        wheres.append("UPPER(drivetrain)=?")
-        params.append(drivetrain.upper())
-    if max_mileage:
-        wheres.append("mileage <= ?")
-        params.append(max_mileage)
-    if color:
-        wheres.append("LOWER(exterior_color) LIKE ?")
-        params.append(f"%{color.lower()}%")
-    if no_accidents:
-        wheres.append("accidents=0")
-    if one_owner:
-        wheres.append("one_owner=1")
-    if year_from:
-        wheres.append("year >= ?")
-        params.append(year_from)
-    if body_style:
-        wheres.append("LOWER(body_style) LIKE ?")
-        params.append(f"%{body_style.lower()}%")
+    When no geographic filter (state/zip) is active AND make+model are provided,
+    query by make/model columns directly so ALL active listings for that model are
+    returned regardless of which search_key they were originally fetched under.
+    This matches the Market Pulse behaviour and prevents the count discrepancy.
+    """
+    # Nationwide query: scan all active inventory for this make/model
+    if make and model and not state and not zip_code:
+        wheres = [
+            "LOWER(make) = LOWER(?)",
+            "(LOWER(model) LIKE LOWER(?) || '%' OR LOWER(?) LIKE LOWER(model) || '%')",
+            "status='active'", "listing_price IS NOT NULL", "listing_price > 0",
+        ]
+        params = [make, model, model]
+    else:
+        # Geo-scoped query: only return listings fetched under this exact search key
+        wheres = ["search_key=?", "status='active'", "listing_price IS NOT NULL", "listing_price > 0"]
+        params = [key]
+
+    _apply_filters(wheres, params, max_price=max_price, min_price=min_price, condition=condition,
+                   state=state, drivetrain=drivetrain, max_mileage=max_mileage, color=color,
+                   no_accidents=no_accidents, one_owner=one_owner, year_from=year_from,
+                   body_style=body_style)
 
     order = {
         "score":    "score DESC",
@@ -925,27 +941,8 @@ def query_inventory(key: str, max_price: Optional[int] = None,
     conn.close()
     results = [dict(r) for r in rows]
 
-    # ── Geo post-filter: if zip+radius provided, calculate distances and filter ──
-    # auto.dev already geo-filtered at ingest time, but this adds distance_miles
-    # to each row and re-filters any cached nationwide results.
-    if zip_code and radius_miles:
-        coords = geocode_zip(zip_code)
-        if coords:
-            user_lat, user_lng = coords
-            in_range = []
-            for r in results:
-                dlat = r.get("dealer_lat")
-                dlng = r.get("dealer_lng")
-                if dlat and dlng:
-                    dist = haversine_miles(user_lat, user_lng, dlat, dlng)
-                    r["distance_miles"] = round(dist, 1)
-                    if dist <= radius_miles:
-                        in_range.append(r)
-                else:
-                    r["distance_miles"] = None
-                    in_range.append(r)
-            results = sorted(in_range, key=lambda x: (x["distance_miles"] is None, x.get("distance_miles", 9999)))
-
+    if zip_code and radius_miles:  # auto.dev geo-filters at ingest; this adds distance_miles
+        results = _geo_filter(results, zip_code, radius_miles)
     return results
 
 
@@ -1011,6 +1008,7 @@ async def search(
 
     # Query DB (zero API calls)
     listings = query_inventory(key, max_price, condition, eff_state, eff_sort,
+                               make=make, model=model,
                                min_price=min_price or None,
                                drivetrain=drivetrain, max_mileage=max_mileage,
                                color=color, no_accidents=no_accidents, one_owner=one_owner,
@@ -1020,13 +1018,6 @@ async def search(
     total = len(listings)
     start = (page - 1) * per_page
     paged = listings[start: start + per_page]
-
-    prices    = [l["listing_price"] for l in listings if l.get("listing_price")]
-    discounts = [l["discount_pct"]  for l in listings if l.get("discount_pct")]
-    states_ct = {}
-    for l in listings:
-        s = l.get("dealer_state", "?")
-        states_ct[s] = states_ct.get(s, 0) + 1
 
     # Data age
     conn = get_db()
@@ -1043,14 +1034,7 @@ async def search(
         "cached":         not synced_now,
         "api_calls_used": api_calls_used,
         "data_age_hours": age_hours,
-        "stats": {
-            "min_price":    min(prices)    if prices    else None,
-            "max_price":    max(prices)    if prices    else None,
-            "avg_price":    round(sum(prices) / len(prices)) if prices else None,
-            "avg_discount": round(sum(discounts) / len(discounts), 1) if discounts else None,
-            "best_discount":max(discounts) if discounts else None,
-            "top_states":   sorted(states_ct.items(), key=lambda x: -x[1])[:5],
-        },
+        "stats":          _build_stats(listings),
     }
 
 
@@ -1367,7 +1351,6 @@ async def ai_chat(
         discounts = [l["discount_pct"] for l in listings if l.get("discount_pct")]
 
         # Build suggested_alternatives from the full category list
-        # (de-duplicated by make) so the user can drill into any specific brand
         seen_makes: set = set()
         alts = []
         for m, mdl in category_makes_models:
@@ -1422,10 +1405,7 @@ async def ai_chat(
             "brand_category": brand_category,
             "suggested_alternatives": alts,
             "tool_calls": tool_calls,
-            "stats": {
-                "avg_price":    round(sum(prices)/len(prices)) if prices else None,
-                "best_discount":max(discounts) if discounts else None,
-            }
+            "stats": {k: v for k, v in _build_stats(listings).items() if k in ("avg_price", "best_discount")},
         }
 
     # ── SINGLE BRAND path (normal search) ────────────────────────────────────
@@ -1444,25 +1424,16 @@ async def ai_chat(
             delta_sync(key, fresh, pages)
         api_calls = pages
 
-    db_params = {
-        "make": make, "model": model,
-        **({"year": year} if year else {}),
-        **({"state": eff_state} if eff_state else {}),
-        **({"zip_code": zip_code} if zip_code else {}),
-        **({"radius_miles": eff_radius} if eff_radius else {}),
-        **({"max_price": max_price} if max_price else {}),
-        **({"condition": condition} if condition else {}),
-        **({"drivetrain": drivetrain} if drivetrain else {}),
-        **({"max_mileage": max_mileage} if max_mileage else {}),
-        **({"color": color} if color else {}),
-        **({"no_accidents": True} if no_acc else {}),
-        **({"one_owner": True} if one_own else {}),
-        **({"body_style": body_style} if body_style else {}),
-        **({"min_price": min_price} if min_price else {}),
-        **({"year_from": year_from} if year_from else {}),
-    }
+    db_params = {k: v for k, v in {
+        "make": make, "model": model, "year": year, "state": eff_state,
+        "zip_code": zip_code, "radius_miles": eff_radius, "max_price": max_price,
+        "condition": condition, "drivetrain": drivetrain, "max_mileage": max_mileage,
+        "color": color, "no_accidents": no_acc or None, "one_owner": one_own or None,
+        "body_style": body_style, "min_price": min_price, "year_from": year_from,
+    }.items() if v}
 
     listings = query_inventory(key, max_price, condition, eff_state, "score",
+                               make=make, model=model,
                                drivetrain=drivetrain, max_mileage=max_mileage,
                                color=color, no_accidents=no_acc, one_owner=one_own,
                                body_style=body_style,
@@ -1473,6 +1444,7 @@ async def ai_chat(
     # retry without condition so the user always sees something (they can re-filter via chips)
     if not listings and condition:
         fallback = query_inventory(key, max_price, None, eff_state, "score",
+                                   make=make, model=model,
                                    drivetrain=drivetrain, max_mileage=max_mileage,
                                    color=color, no_accidents=no_acc, one_owner=one_own,
                                    body_style=body_style,
@@ -1482,9 +1454,6 @@ async def ai_chat(
             log.info(f"Condition filter '{condition}' yielded 0 results — returning unfiltered ({len(fallback)} listings)")
             listings = fallback
             condition = None   # clear so intent reflects reality
-
-    prices    = [l["listing_price"] for l in listings if l.get("listing_price")]
-    discounts = [l["discount_pct"] for l in listings if l.get("discount_pct")]
 
     # Build readable intent output for tool call display (exclude raw arrays)
     intent_display = {k: v for k, v in intent.items()
@@ -1533,10 +1502,7 @@ async def ai_chat(
         "brand_category": brand_category,
         "suggested_alternatives": intent.get("suggested_alternatives", []),
         "tool_calls": tool_calls,
-        "stats": {
-            "avg_price":    round(sum(prices)/len(prices)) if prices else None,
-            "best_discount":max(discounts) if discounts else None,
-        }
+        "stats": {k: v for k, v in _build_stats(listings).items() if k in ("avg_price", "best_discount")},
     }
 
 
