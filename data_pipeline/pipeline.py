@@ -37,7 +37,7 @@ AUTO_DEV_BASE    = "https://api.auto.dev"
 # ─────────────────────────────────────────────────────────────
 # DEAL SCORING
 # Weighted formula:
-#   Score = (Discount% × 0.40) + (History × 0.25) + (Availability × 0.20) + (CPO × 0.15)
+#   Score = (Discount% × 0.45) + (Ownership × 0.20) + (Availability × 0.20) + (CPO × 0.15)
 # ─────────────────────────────────────────────────────────────
 def compute_deal_score(listing: dict) -> dict:
     """
@@ -49,7 +49,6 @@ def compute_deal_score(listing: dict) -> dict:
     is_used  = listing.get("is_used", True)
     is_cpo   = listing.get("is_cpo", False)
     history  = listing.get("history") or {}
-    accidents = history.get("accidentCount", 0) if history else 0
     one_owner = history.get("oneOwner", False) if history else False
 
     # 1. Discount score: how much below MSRP (cap at 20% = 1.0)
@@ -60,17 +59,13 @@ def compute_deal_score(listing: dict) -> dict:
         discount_pct   = 0
         discount_score = 0.0
 
-    # 2. History score (used cars only)
+    # 2. Ownership score (single owner = bonus)
     if not is_used:
-        history_score = 1.0   # new car, perfect history
-    elif accidents == 0 and one_owner:
-        history_score = 1.0
-    elif accidents == 0:
-        history_score = 0.75
-    elif accidents == 1:
-        history_score = 0.4
+        ownership_score = 1.0   # new car
+    elif one_owner:
+        ownership_score = 1.0
     else:
-        history_score = 0.1
+        ownership_score = 0.5
 
     # 3. Availability / freshness score (online = 1.0)
     availability_score = 1.0 if listing.get("online", True) else 0.0
@@ -80,8 +75,8 @@ def compute_deal_score(listing: dict) -> dict:
 
     # Weighted composite
     score = (
-        discount_score     * 0.40 +
-        history_score      * 0.25 +
+        discount_score     * 0.45 +
+        ownership_score    * 0.20 +
         availability_score * 0.20 +
         cpo_score          * 0.15
     )
@@ -90,7 +85,7 @@ def compute_deal_score(listing: dict) -> dict:
         "score":              round(score, 4),
         "discount_pct":       round(discount_pct, 2),
         "discount_score":     round(discount_score, 4),
-        "history_score":      round(history_score, 4),
+        "history_score":      round(ownership_score, 4),
         "availability_score": round(availability_score, 4),
         "cpo_score":          round(cpo_score, 4),
     }
