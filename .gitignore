@@ -96,4 +96,4 @@ requirements-streamlit.txt
 Procfile
 
 # ── Internal planning docs ────────────────────────────────────────────────────────
-docs/
+docs/PLAN.md

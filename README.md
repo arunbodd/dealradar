@@ -23,20 +23,18 @@
 
 ## Features
 
-- **Conversational search** — No dropdowns needed. Describe what you want: fuel type (hybrid, EV, PHEV), body style (convertible, SUV, truck), location, budget, mileage, history — all parsed from natural language
+- **Conversational search** — No dropdowns needed. Describe what you want: body style (convertible, SUV, truck), location, budget, mileage, history — all parsed from natural language
 - **Two-stage LangGraph intent pipeline** — Query normalisation (Stage 1) + structured extraction (Stage 2), traced end-to-end via LangSmith
 - **Deal scoring** — 0–100 score per listing based on discount off MSRP, mileage, accident history, and CPO status
-- **Title brand detection** — Salvage, rebuilt, lemon, and flood titles trigger a 0.45× score penalty and a forced "Pass" recommendation
+- **Title brand scoring** — Salvage, rebuilt, lemon, and flood titles are penalised in the deal score and surface in the AI deal analysis recommendation
 - **AI deal analysis** — Recommendation, headline, price vs. market, negotiation tactics, green flags, red flags, bottom line
 - **Market Pulse** — Horizontal collapsible banner with supply, pricing, and momentum insight cards plus a buyer/seller verdict; refreshes on demand
 - **Body style intent** — "convertible roof", "drop top", "ragtop", "cabriolet" → `body_style=convertible`; coupe, sedan, SUV, crossover, truck, hatchback, wagon all extracted
-- **Fuel type via chat** — Mention "hybrid", "EV", "plug-in hybrid", "diesel" in your query; no sidebar dropdown needed
 - **Geo radius search** — Zip code + mile radius from query text or sidebar; "Near Me" auto-detects location via browser
 - **Smart caching** — First search costs 3–5 API calls. Repeat searches cost zero. Stale listings auto-flagged after 2 missed syncs
 - **Delta sync** — Only changed listings are written on refresh; price drops tracked via `prev_listing_price`
 - **Brand category search** — "European cars under $50k", "Japanese sedans" → multi-make search with clickable brand chips
 - **Smart model resolution** — Three-layer fallback: regex normalisation → DB fuzzy match → API retry with progressive simplification (e.g., "GLE450" → "GLE")
-- **AI step traceback** — Collapsible tool-call cards in the chat sidebar show Stage 1 → Stage 2 → Database Search inputs and outputs
 - **Comparison mode** — Add up to 4 listings side-by-side
 - **Days on lot** — Green (60+ days), gold (30–60 days) pill on each card
 - **Condition chip sync** — Condition filter always reflects what the AI extracted; clicking All/New/Used uses the exact same geographic scope as the original chat search
@@ -67,7 +65,13 @@ car-deal-finder/
 └── start.sh               # Local dev launcher
 ```
 
+### Search Pipeline
+
+![Search Pipeline](docs/pipeline.svg)
+
 ### AI Agents
+
+![AI Agent Map](docs/agents.svg)
 
 | Agent | Model | Job |
 |---|---|---|
