@@ -457,12 +457,12 @@ def normalize(raw: dict) -> dict:
     else:
         is_used = True                   # Everything else: used
 
-    history_score = 1.0 if (not is_used or (accidents == 0 and one_owner)) else (0.75 if accidents == 0 else 0.4)
+    history_score = 1.0 if (not is_used or one_owner) else 0.5
     cpo_score  = 1.0 if rl.get("cpo") else 0.5
     # Salvage/rebuilt title is a hard penalty — no matter how cheap, it's risky
     _is_branded = title_brand.lower() in ("salvage", "rebuilt", "lemon", "flood")
     title_penalty = 0.45 if _is_branded else 1.0   # slash score nearly in half
-    score      = round(discount_score * 0.40 + history_score * 0.25 + 1.0 * 0.20 + cpo_score * 0.15, 4)
+    score      = round(discount_score * 0.45 + history_score * 0.20 + 1.0 * 0.20 + cpo_score * 0.15, 4)
     score      = round(score * title_penalty, 4)
 
     return {
@@ -488,7 +488,7 @@ def normalize(raw: dict) -> dict:
         "base_invoice":   v.get("baseInvoice"),
         "listing_price":  price,
         "discount_pct":   discount,
-        "discount_amount":round(base_msrp - price, 0) if (base_msrp and price) else None,
+        "discount_amount":round(base_msrp - price, 0) if (base_msrp and price and base_msrp > price) else None,
         "mileage":        mileage,
         "is_used":        is_used,
         "is_cpo":         is_cpo_raw,
@@ -867,7 +867,6 @@ def query_inventory(key: str, max_price: Optional[int] = None,
                     one_owner: Optional[bool] = None,
                     year_from: Optional[int] = None,
                     body_style: Optional[str] = None,
-                    fuel_type: Optional[str] = None,
                     zip_code: Optional[str] = None,
                     radius_miles: Optional[int] = None) -> List[dict]:
     """
@@ -911,17 +910,6 @@ def query_inventory(key: str, max_price: Optional[int] = None,
     if body_style:
         wheres.append("LOWER(body_style) LIKE ?")
         params.append(f"%{body_style.lower()}%")
-    if fuel_type:
-        ft = fuel_type.lower()
-        if ft == "phev":
-            # DB stores values like "Plug-In Hybrid" — match both spellings
-            wheres.append("(LOWER(fuel) LIKE '%phev%' OR LOWER(fuel) LIKE '%plug-in%' OR LOWER(fuel) LIKE '%plug in%')")
-        elif ft == "hybrid":
-            # Hybrid but NOT plug-in
-            wheres.append("(LOWER(fuel) LIKE '%hybrid%' AND LOWER(fuel) NOT LIKE '%plug-in%' AND LOWER(fuel) NOT LIKE '%plug in%' AND LOWER(fuel) NOT LIKE '%phev%')")
-        else:
-            wheres.append("LOWER(fuel) LIKE ?")
-            params.append(f"%{ft}%")
 
     order = {
         "score":    "score DESC",
@@ -981,7 +969,6 @@ async def search(
     year_from:    Optional[int] = Query(None, description="minimum model year, e.g. 2020"),
     min_price:    Optional[int] = Query(None, description="minimum listing price in USD"),
     body_style:   Optional[str] = Query(None, description="convertible | coupe | sedan | SUV | crossover | truck | hatchback | wagon"),
-    fuel_type:    Optional[str] = Query(None, description="gas | hybrid | electric | phev | diesel"),
     zip_code:     Optional[str] = Query(None, description="5-digit US zip code for geo radius search"),
     radius_miles: Optional[int] = Query(None, description="Search radius in miles around zip (default 100)"),
     sort_by:      str           = Query("score", description="score | price | discount | newest | distance"),
@@ -1028,7 +1015,6 @@ async def search(
                                drivetrain=drivetrain, max_mileage=max_mileage,
                                color=color, no_accidents=no_accidents, one_owner=one_owner,
                                year_from=year_from, body_style=body_style or None,
-                               fuel_type=fuel_type or None,
                                zip_code=zip_code, radius_miles=eff_radius)
 
     total = len(listings)
@@ -1356,7 +1342,6 @@ async def ai_chat(
     no_acc        = intent.get("no_accidents", False)
     one_own       = intent.get("one_owner", False)
     body_style    = intent.get("body_style") or None
-    fuel_type     = intent.get("fuel_type") or None
     zip_code      = intent.get("zip_code") or None
     radius_miles  = intent.get("radius_miles") or None
     brand_category = intent.get("brand_category") or None
@@ -1473,7 +1458,6 @@ async def ai_chat(
         **({"no_accidents": True} if no_acc else {}),
         **({"one_owner": True} if one_own else {}),
         **({"body_style": body_style} if body_style else {}),
-        **({"fuel_type": fuel_type} if fuel_type else {}),
         **({"min_price": min_price} if min_price else {}),
         **({"year_from": year_from} if year_from else {}),
     }
@@ -1481,9 +1465,23 @@ async def ai_chat(
     listings = query_inventory(key, max_price, condition, eff_state, "score",
                                drivetrain=drivetrain, max_mileage=max_mileage,
                                color=color, no_accidents=no_acc, one_owner=one_own,
-                               body_style=body_style, fuel_type=fuel_type,
+                               body_style=body_style,
                                zip_code=zip_code, radius_miles=eff_radius,
                                min_price=min_price, year_from=year_from)
+
+    # Safety fallback: if a condition filter wiped all results but unfiltered data exists,
+    # retry without condition so the user always sees something (they can re-filter via chips)
+    if not listings and condition:
+        fallback = query_inventory(key, max_price, None, eff_state, "score",
+                                   drivetrain=drivetrain, max_mileage=max_mileage,
+                                   color=color, no_accidents=no_acc, one_owner=one_own,
+                                   body_style=body_style,
+                                   zip_code=zip_code, radius_miles=eff_radius,
+                                   min_price=min_price, year_from=year_from)
+        if fallback:
+            log.info(f"Condition filter '{condition}' yielded 0 results — returning unfiltered ({len(fallback)} listings)")
+            listings = fallback
+            condition = None   # clear so intent reflects reality
 
     prices    = [l["listing_price"] for l in listings if l.get("listing_price")]
     discounts = [l["discount_pct"] for l in listings if l.get("discount_pct")]
@@ -1632,32 +1630,54 @@ async def market_intelligence(
     except Exception as e:
         raise HTTPException(503, f"AI engine unavailable: {e}")
 
-    key  = search_key(make, model, year, state)
+    # Query directly by make/model columns rather than search_key.
+    # This avoids mismatches between zip-based vs state-based search_keys
+    # and handles partial model names (user types "NX 350", DB stores "NX"):
+    #   LOWER(model) LIKE 'nx 350%'  → matches "NX 350"
+    #   LOWER('nx 350') LIKE 'nx%'   → matches DB model "NX"  ← cross-direction
     conn = get_db()
+    year_clause = "AND year = ?" if year else ""
+    extra = [year] if year else []
 
-    stats_row = conn.execute("""
+    def _mp(sql, *p):
+        return conn.execute(sql, list(p) + extra).fetchone()
+
+    stats_row = _mp(f"""
         SELECT MIN(listing_price) as min_p, MAX(listing_price) as max_p,
                AVG(listing_price) as avg_p, AVG(discount_pct) as avg_d,
                MAX(discount_pct) as best_d, COUNT(*) as total
-        FROM inventory WHERE search_key=? AND status='active' AND listing_price > 0
-    """, (key,)).fetchone()
+        FROM inventory
+        WHERE LOWER(make) = LOWER(?)
+          AND (LOWER(model) LIKE LOWER(?) || '%' OR LOWER(?) LIKE LOWER(model) || '%')
+          {year_clause}
+          AND status='active' AND listing_price > 0
+    """, make, model, model)
 
-    top_states = [(r[0], r[1]) for r in conn.execute("""
+    top_states = [(r[0], r[1]) for r in conn.execute(f"""
         SELECT dealer_state, COUNT(*) as n FROM inventory
-        WHERE search_key=? AND status='active'
+        WHERE LOWER(make) = LOWER(?)
+          AND (LOWER(model) LIKE LOWER(?) || '%' OR LOWER(?) LIKE LOWER(model) || '%')
+          {year_clause}
+          AND status='active'
         GROUP BY dealer_state ORDER BY n DESC LIMIT 5
-    """, (key,)).fetchall()]
+    """, [make, model, model] + extra).fetchall()]
 
-    price_drops = conn.execute("""
+    price_drops = conn.execute(f"""
         SELECT COUNT(*) as n FROM inventory
-        WHERE search_key=? AND status='active'
+        WHERE LOWER(make) = LOWER(?)
+          AND (LOWER(model) LIKE LOWER(?) || '%' OR LOWER(?) LIKE LOWER(model) || '%')
+          {year_clause}
+          AND status='active'
           AND prev_listing_price IS NOT NULL AND listing_price < prev_listing_price
-    """, (key,)).fetchone()["n"]
+    """, [make, model, model] + extra).fetchone()["n"]
 
-    new_count = conn.execute("""
+    new_count = conn.execute(f"""
         SELECT COUNT(*) as n FROM inventory
-        WHERE search_key=? AND status='active' AND first_seen_at >= ?
-    """, (key, time.time() - 48*3600)).fetchone()["n"]
+        WHERE LOWER(make) = LOWER(?)
+          AND (LOWER(model) LIKE LOWER(?) || '%' OR LOWER(?) LIKE LOWER(model) || '%')
+          {year_clause}
+          AND status='active' AND first_seen_at >= ?
+    """, [make, model, model] + extra + [time.time() - 48*3600]).fetchone()["n"]
 
     conn.close()
 

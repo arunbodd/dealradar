@@ -3,7 +3,7 @@ DealRadar — AI Engine
 =====================
 Three agents powered by Claude API:
 
-  Agent 1 · Intent Extractor  (claude-haiku-4-5)
+  Agent 1 · Intent Extractor  (claude-sonnet-4-6)
     Natural language → structured search params
     "I want a clean white AWD BMW X5 under $50k in Florida" →
     {make:"BMW", model:"X5", color:"White", drivetrain:"AWD",
@@ -93,11 +93,6 @@ def extract_search_intent(query: str) -> dict:
                         "Only set body_style=coupe when the user explicitly wants a fixed-roof coupe with NO convertible mention."
                     )
                 },
-                "fuel_type":    {
-                    "type": "string",
-                    "enum": ["gas","hybrid","electric","phev","diesel",""],
-                    "description": "Fuel type. 'EV'/'electric'/'battery' → electric. 'hybrid'/'HEV' → hybrid. 'plug-in'/'PHEV' → phev. 'gas'/'gasoline'/'petrol' → gas. 'diesel' → diesel."
-                },
                 "no_accidents": {"type": "boolean", "description": "True if user wants accident-free vehicles only"},
                 "one_owner":    {"type": "boolean", "description": "True if user wants single-owner vehicles"},
                 "min_price":    {"type": "integer", "description": "Minimum listing price in USD. Set when user says 'over $X', 'at least $X', 'between $X and $Y'."},
@@ -143,7 +138,7 @@ def extract_search_intent(query: str) -> dict:
 
     try:
         resp = c.messages.create(
-            model="claude-haiku-4-5-20251001",
+            model="claude-sonnet-4-6",
             max_tokens=1500,
             tools=tools,
             tool_choice={"type": "any"},

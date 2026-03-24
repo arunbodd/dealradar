@@ -105,9 +105,6 @@
   background: rgba(0,0,0,0.03); border-color: rgba(0,0,0,0.1); color: #4B5563;
 }
 [data-theme="light"] .btn-carfax:hover { background: var(--gold-soft); border-color: rgba(196,162,83,0.45); color: #8B6400; }
-[data-theme="light"] .btn-detail {
-  background: rgba(0,0,0,0.03); border-color: rgba(0,0,0,0.1); color: #4B5563;
-}
 [data-theme="light"] .btn-ai-analysis {
   background: rgba(37,99,200,0.06); border-color: rgba(37,99,200,0.2); color: #1d4ed8;
 }
@@ -120,8 +117,7 @@
 
 /* ── Sidebar / panels ── */
 [data-theme="light"] .sidebar-card,
-[data-theme="light"] .search-card,
-[data-theme="light"] .chat-panel { background: #F8F9FC; border-color: rgba(0,0,0,0.12); box-shadow: 0 2px 12px rgba(0,0,0,0.07); }
+[data-theme="light"] .search-card { background: #F8F9FC; border-color: rgba(0,0,0,0.12); box-shadow: 0 2px 12px rgba(0,0,0,0.07); }
 [data-theme="light"] .sidebar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); }
 
 /* ── Sort buttons ── */
@@ -231,6 +227,15 @@ body {
   color: var(--text);
   min-height: 100vh;
   overflow-x: hidden;
+}
+body.no-listings {
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Global font reset — uniform across all form elements */
+input, select, textarea, button, option {
+  font-family: 'Barlow', sans-serif;
 }
 
 /* ══════════════════════════════════════════════════════
@@ -368,12 +373,13 @@ label {
   font-family: 'Barlow', sans-serif;
   font-size: 1.06rem; padding: 11px 14px;
   outline: none; width: 100%;
-  transition: border-color .2s, box-shadow .2s;
+  transition: border-color .25s ease, box-shadow .25s ease, background .25s ease;
   appearance: none;
 }
 .inp:focus, select:focus {
-  border-color: var(--blue);
-  box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(196,162,83,0.12);
+  background: rgba(255,255,255,0.06);
 }
 .inp::placeholder { color: var(--muted); }
 
@@ -425,6 +431,12 @@ select option { background: #1e293b; color: var(--text); }
   display: flex; align-items: center; gap: 8px;
   box-shadow: 0 1px 4px rgba(0,0,0,0.18);
   flex-direction: column; align-items: flex-start;
+  transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+}
+.stat-pill:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+  border-color: rgba(196,162,83,0.15);
 }
 .stat-label {
   font-family: 'Barlow Condensed', sans-serif; font-size: 0.82rem;
@@ -442,12 +454,12 @@ select option { background: #1e293b; color: var(--text); }
 [data-theme="light"] .stat-pill { box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
 
 /* ══════════════════════════════════════════════════════
-   RESULTS LAYOUT — 3 column: filters | listings | chat
+   RESULTS LAYOUT — 3 column: filters | listings | concierge
 ══════════════════════════════════════════════════════ */
 .results-layout {
   position: relative; z-index: 1;
-  max-width: 1600px; margin: 56px auto 0;
-  padding: 12px 1.5rem 40px;
+  max-width: 1800px; margin: 56px auto 0;
+  padding: 12px 0.5rem 40px;
   display: grid;
   grid-template-columns: 210px 1fr 360px;
   gap: 16px;
@@ -456,6 +468,10 @@ select option { background: #1e293b; color: var(--text); }
 }
 .results-layout.sidebar-collapsed {
   grid-template-columns: 28px 1fr 360px;
+}
+.results-layout.sidebar-collapsed .sidebar {
+  overflow: hidden;
+  padding-bottom: 0;
 }
 .results-layout.sidebar-collapsed .sidebar > *:not(.sidebar-collapse-btn-wrap) {
   display: none;
@@ -488,6 +504,11 @@ select option { background: #1e293b; color: var(--text); }
 .sidebar-card {
   background: var(--card); border: 1px solid var(--border);
   border-radius: var(--radius); padding: 14px 16px; margin-bottom: 8px;
+  transition: border-color .25s ease, box-shadow .25s ease;
+}
+.sidebar-card:hover {
+  border-color: rgba(196,162,83,0.15);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.12);
 }
 
 .sidebar-title {
@@ -629,6 +650,13 @@ select option { background: #1e293b; color: var(--text); }
   font-size: 0.86rem; font-weight: 600; color: var(--emerald);
   letter-spacing: 0.02em;
 }
+.card-markup {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(220,38,38,0.08); border: 1px solid rgba(220,38,38,0.18);
+  border-radius: 4px; padding: 3px 9px;
+  font-size: 0.86rem; font-weight: 600; color: #f87171;
+  letter-spacing: 0.02em;
+}
 
 .card-meta {
   display: flex; gap: 8px; flex-wrap: wrap;
@@ -664,7 +692,9 @@ select option { background: #1e293b; color: var(--text); }
   color: var(--subtle);
 }
 .btn-carfax:hover { border-color: var(--gold); color: var(--gold); background: var(--gold-soft); }
-/* AI Analysis + Details — full-width per row, clearly readable */
+.btn-carfax--clean { border-color: rgba(16,185,129,0.35); color: var(--emerald); }
+.btn-carfax--clean:hover { border-color: var(--emerald); background: rgba(16,185,129,0.08); color: var(--emerald); }
+/* AI Analysis — full-width, clearly readable */
 .btn-ai-analysis {
   flex: 1; border: none; border-radius: 4px;
   font-size: 0.86rem; font-weight: 600; padding: 8px 6px; cursor: pointer;
@@ -674,38 +704,6 @@ select option { background: #1e293b; color: var(--text); }
   background: rgba(74,122,181,0.08); border: 1px solid rgba(74,122,181,0.25); color: var(--blue2);
 }
 .btn-ai-analysis:hover { border-color: var(--blue); background: rgba(74,122,181,0.16); color: var(--blue2); }
-.btn-detail {
-  flex: 1; border: none; border-radius: 4px;
-  font-size: 0.86rem; font-weight: 500; padding: 8px 6px; cursor: pointer;
-  transition: all .15s; text-align: center; text-decoration: none;
-  display: flex; align-items: center; justify-content: center; gap: 4px;
-  letter-spacing: 0.02em; text-transform: uppercase; white-space: nowrap;
-  background: transparent; border: 1px solid var(--border-md); color: var(--subtle);
-}
-.btn-detail:hover { border-color: var(--blue); color: var(--blue2); background: rgba(74,122,181,0.08); }
-
-/* Links dropdown on card */
-.card-links-wrap { position: relative; }
-.card-links-toggle { white-space: nowrap; }
-.card-links-menu {
-  display: none; position: absolute; bottom: calc(100% + 4px); right: 0;
-  background: var(--card); border: 1px solid var(--border-md);
-  border-radius: 6px; overflow: hidden; z-index: 50; min-width: 140px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.28);
-}
-.card-links-wrap.open .card-links-menu { display: block; }
-.card-link-item {
-  display: block; padding: 8px 13px;
-  font-family: 'Barlow Condensed', sans-serif; font-size: .94rem;
-  font-weight: 500; color: var(--subtle); text-decoration: none;
-  transition: background .12s; letter-spacing: .01em;
-  border-bottom: 1px solid var(--border);
-}
-.card-link-item:last-child { border-bottom: none; }
-.card-link-item:hover { background: rgba(255,255,255,0.05); color: var(--text); }
-.card-link-item--gold { color: var(--gold); }
-[data-theme="light"] .card-links-menu { box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
-[data-theme="light"] .card-link-item:hover { background: rgba(0,0,0,0.04); }
 
 /* Compare button — full width second row so it's always visible */
 .btn-compare {
@@ -971,8 +969,8 @@ select option { background: #1e293b; color: var(--text); }
   width: 14px; height: 14px; border-radius: 50%;
   background: var(--muted); transition: all .2s;
 }
-.toggle-switch.on { background: rgba(59,130,246,0.3); border-color: rgba(59,130,246,0.5); }
-.toggle-switch.on::after { left: 18px; background: var(--blue2); }
+.toggle-switch.on { background: rgba(196,162,83,0.25); border-color: rgba(196,162,83,0.4); }
+.toggle-switch.on::after { left: 18px; background: var(--gold); }
 
 .mileage-range {
   display: flex; flex-direction: column; gap: 8px;
@@ -983,14 +981,15 @@ select option { background: #1e293b; color: var(--text); }
 }
 .mileage-range input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none; width: 16px; height: 16px;
-  border-radius: 50%; background: var(--blue); cursor: pointer;
-  box-shadow: 0 0 8px rgba(59,130,246,0.4);
+  border-radius: 50%; background: var(--gold); cursor: pointer;
+  box-shadow: 0 0 8px rgba(196,162,83,0.4);
+  transition: box-shadow .2s ease;
 }
 .mileage-range-labels {
   display: flex; justify-content: space-between;
   font-family: 'Barlow Condensed', sans-serif; font-size: 0.84rem; letter-spacing: 0.03em; color: var(--muted);
 }
-.mileage-val { font-family: 'Barlow Condensed', sans-serif; font-size: 0.96rem; font-weight: 600; color: var(--blue2); text-align: center; letter-spacing: 0.02em; }
+.mileage-val { font-family: 'Barlow Condensed', sans-serif; font-size: 0.96rem; font-weight: 600; color: var(--gold); text-align: center; letter-spacing: 0.02em; }
 
 .color-select {
   font-family: 'Barlow Condensed', sans-serif; letter-spacing: 0.02em;
@@ -999,7 +998,7 @@ select option { background: #1e293b; color: var(--text); }
   color: var(--text); font-size: 0.86rem; padding: 8px 10px;
   outline: none; cursor: pointer;
 }
-.color-select:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
+.color-select:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(196,162,83,0.12); }
 .color-select option { background: #1e293b; color: var(--text); }
 
 /* ══════════════════════════════════════════════════════
@@ -1311,16 +1310,47 @@ select option { background: #1e293b; color: var(--text); }
 ══════════════════════════════════════════════════════ */
 @keyframes fadeIn   { from{opacity:0} to{opacity:1} }
 @keyframes slideUp  { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+@keyframes cardEnter { from{opacity:0;transform:translateY(12px) scale(0.98)} to{opacity:1;transform:translateY(0) scale(1)} }
+
+/* Staggered card entrance */
+.deal-card { animation: cardEnter .35s ease both; }
+.deal-card:nth-child(1)  { animation-delay: 0s; }
+.deal-card:nth-child(2)  { animation-delay: .04s; }
+.deal-card:nth-child(3)  { animation-delay: .08s; }
+.deal-card:nth-child(4)  { animation-delay: .12s; }
+.deal-card:nth-child(5)  { animation-delay: .16s; }
+.deal-card:nth-child(6)  { animation-delay: .20s; }
+.deal-card:nth-child(7)  { animation-delay: .24s; }
+.deal-card:nth-child(8)  { animation-delay: .28s; }
+.deal-card:nth-child(9)  { animation-delay: .32s; }
+.deal-card:nth-child(10) { animation-delay: .36s; }
+.deal-card:nth-child(11) { animation-delay: .40s; }
+.deal-card:nth-child(12) { animation-delay: .44s; }
 
 /* ══════════════════════════════════════════════════════
-   CHAT PANEL
+   CONCIERGE SIDEBAR (right column)
 ══════════════════════════════════════════════════════ */
-.chat-panel {
+.concierge-sidebar {
   position: sticky; top: 68px;
   height: calc(100vh - 80px);
   display: flex; flex-direction: column;
-  background: var(--card); border: 1px solid var(--border);
+  background: rgba(22,27,34,0.88);
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(196,162,83,0.12);
   border-radius: var(--radius); overflow: hidden;
+  transition: box-shadow .3s ease, border-color .3s ease;
+}
+[data-theme="light"] .concierge-sidebar {
+  background: rgba(248,249,252,0.90);
+  border-color: rgba(0,0,0,0.10);
+  box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+}
+.concierge-sidebar:hover {
+  border-color: rgba(196,162,83,0.22);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.25);
+}
+.concierge-sidebar .chat-messages {
+  flex: 1; overflow-y: auto;
 }
 .chat-header {
   display: flex; align-items: center; justify-content: space-between;
@@ -1348,7 +1378,7 @@ select option { background: #1e293b; color: var(--text); }
 .chat-messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
 .chat-msg {
   padding: 9px 12px; border-radius: 8px;
-  font-size: 0.96rem; line-height: 1.55; animation: fadeIn .2s ease;
+  font-size: 0.96rem; line-height: 1.55; animation: slideUp .25s ease;
 }
 .chat-msg-user {
   align-self: flex-end; max-width: 88%;
@@ -1370,43 +1400,6 @@ select option { background: #1e293b; color: var(--text); }
 }
 .chat-chip:hover {
   border-color: var(--gold); color: var(--gold); background: var(--gold-soft);
-}
-/* Tool call blocks */
-.chat-tool-call {
-  align-self: stretch;
-  background: rgba(74,144,112,0.04); border: 1px solid rgba(74,144,112,0.12);
-  border-radius: 8px; overflow: hidden; font-size: 0.90rem; animation: fadeIn .2s ease;
-}
-.tool-call-header {
-  display: flex; align-items: center; gap: 7px;
-  padding: 6px 11px; cursor: pointer;
-  color: var(--emerald); font-weight: 500; user-select: none; letter-spacing: 0.02em;
-}
-.tool-call-header:hover { background: rgba(74,144,112,0.05); }
-.tool-tag {
-  margin-left: auto; font-size: 0.86rem; color: var(--muted);
-  background: rgba(255,255,255,0.04); border-radius: 4px; padding: 2px 6px; font-weight: 400;
-  letter-spacing: 0.02em; text-transform: uppercase;
-}
-.tool-toggle { font-size: 0.86rem; color: var(--muted); transition: transform .15s; margin-left: 2px; }
-.chat-tool-call.open .tool-toggle { transform: rotate(180deg); }
-.tool-call-body {
-  display: none; padding: 0 11px 10px;
-  flex-direction: column; gap: 6px;
-  border-top: 1px solid rgba(74,144,112,0.1);
-  max-height: 340px; overflow-y: auto; scrollbar-width: thin;
-}
-.chat-tool-call.open .tool-call-body { display: flex; }
-.tool-io-label {
-  font-size: 0.84rem; text-transform: uppercase; letter-spacing: 0.02em;
-  color: var(--muted); margin-bottom: 3px; margin-top: 7px;
-}
-.tool-json {
-  background: rgba(0,0,0,0.35); border-radius: 4px; padding: 8px;
-  font-family: 'Courier New', monospace; font-size: 0.96rem;
-  color: #86c4a8; overflow-x: auto; max-height: 130px; overflow-y: auto;
-  scrollbar-width: thin; white-space: pre-wrap; word-break: break-word;
-  margin: 0; border: 1px solid rgba(255,255,255,0.04);
 }
 /* Thinking animation */
 .chat-thinking {
@@ -1433,9 +1426,9 @@ select option { background: #1e293b; color: var(--text); }
   flex: 1; background: rgba(255,255,255,0.025); border: 1px solid var(--border-md);
   border-radius: 8px; color: var(--text); font-family: 'Barlow', sans-serif;
   font-size: 0.96rem; padding: 9px 12px; outline: none; resize: none;
-  min-height: 38px; max-height: 90px; transition: border-color .2s; scrollbar-width: none;
+  min-height: 38px; max-height: 90px; transition: border-color .25s ease, box-shadow .25s ease, background .25s ease; scrollbar-width: none;
 }
-.chat-input:focus { border-color: var(--gold); box-shadow: 0 0 0 2px rgba(196,162,83,0.08); }
+.chat-input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(196,162,83,0.10); background: rgba(255,255,255,0.04); }
 .chat-input::placeholder { color: var(--muted); }
 .btn-chat-send {
   width: 36px; height: 36px; flex-shrink: 0;
@@ -1447,6 +1440,18 @@ select option { background: #1e293b; color: var(--text); }
 .btn-chat-send:hover { background: #d4b063; box-shadow: 0 4px 16px rgba(196,162,83,0.3); }
 .btn-chat-send:active { transform: scale(0.96); }
 .btn-chat-send:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* ─── Concierge chat content (inside sidebar) ───────────── */
+.concierge-sidebar .chat-footer {
+  padding: 10px 12px; border-top: 1px solid var(--border);
+}
+.concierge-sidebar .chat-input {
+  background: rgba(255,255,255,0.04);
+}
+.concierge-sidebar .chat-input:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(196,162,83,0.12);
+}
 
 /* ══════════════════════════════════════════════════════
    CHAT HISTORY DRAWER (bottom of chat panel)
@@ -1513,7 +1518,7 @@ a.dealer-link:hover { color: var(--gold); text-decoration: underline; }
 @media(max-width:768px){
   .results-layout { grid-template-columns: 1fr; }
   .sidebar { display: none; }
-  .chat-panel { position: static; height: 480px; }
+  .concierge-sidebar { position: static; height: 480px; }
 }
 @media(max-width:600px){
   header { padding: 0 1rem; }
@@ -1535,7 +1540,7 @@ a.dealer-link:hover { color: var(--gold); text-decoration: underline; }
 }
 </style>
 </head>
-<body>
+<body class="no-listings">
 
 <div class="bg-mesh"></div>
 
@@ -1740,19 +1745,6 @@ a.dealer-link:hover { color: var(--gold); text-decoration: underline; }
       </div>
     </div>
 
-    <!-- Fuel Type -->
-    <div class="sidebar-card">
-      <div class="sidebar-title">Fuel Type</div>
-      <select class="color-select" id="fuel-type-select" onchange="updateClearAllVisibility();doSearch(1)">
-        <option value="">Any Fuel</option>
-        <option value="gas">Gas</option>
-        <option value="hybrid">Hybrid (HEV)</option>
-        <option value="electric">Electric (EV)</option>
-        <option value="phev">Plug-In Hybrid (PHEV)</option>
-        <option value="diesel">Diesel</option>
-      </select>
-    </div>
-
     <!-- Exterior Color -->
     <div class="sidebar-card" id="color-card" style="display:none">
       <div class="sidebar-title">Exterior Color</div>
@@ -1836,30 +1828,34 @@ a.dealer-link:hover { color: var(--gold); text-decoration: underline; }
     <div class="results-grid" id="results-grid">
       <!-- Initial empty state — replaced by results after chat search -->
       <div class="state-wrap" id="initial-empty-state" style="grid-column:1/-1">
-        <div class="state-title" style="font-family:'Barlow Condensed',sans-serif;font-size:1.25rem;font-weight:600;margin-bottom:12px;letter-spacing:0.03em">Begin with the Concierge</div>
-        <div class="state-sub">Describe the car you're looking for in the chat panel</div>
+        <div class="state-title" style="font-family:'Barlow Condensed',sans-serif;font-size:1.25rem;font-weight:600;margin-bottom:12px;letter-spacing:0.03em">Search for a Car</div>
+        <div class="state-sub">Use the Concierge on the right to search</div>
       </div>
     </div>
     <div class="pagination" id="pagination"></div>
+
   </main>
 
-  <!-- CHAT PANEL (right column) -->
-  <aside class="chat-panel">
+  <!-- CONCIERGE SIDEBAR (right column) -->
+  <aside class="concierge-sidebar">
     <div class="chat-header">
-      <div class="chat-header-title">
-        Concierge
-      </div>
+      <div class="chat-header-title">Concierge</div>
       <span class="chat-header-badge">AI</span>
     </div>
     <div class="chat-messages" id="chat-messages">
       <div class="chat-msg chat-msg-ai">
-        <span style="font-family:'Barlow Condensed',sans-serif;font-size:.92rem;line-height:1.9;letter-spacing:.01em;display:block;margin-bottom:10px">Tell me what you are looking for: make, budget, features, location. I will surface the best deals available. You can also ask general car questions.</span>
-        <div class="chat-chips">
+        <div class="chat-chips" style="margin-top:0">
           <span class="chat-chip" onclick="prefillChat('CPO Porsche Cayenne under $75k, no accidents')">CPO Porsche Cayenne</span>
           <span class="chat-chip" onclick="prefillChat('Genesis GV80 AWD under $55k in the Southeast')">Genesis GV80 · Southeast</span>
           <span class="chat-chip" onclick="prefillChat('BMW M3 single owner under $65k low miles')">BMW M3 · Single owner</span>
         </div>
       </div>
+    </div>
+    <div class="chat-footer">
+      <textarea class="chat-input" id="chat-input" rows="1"
+        placeholder="e.g. 'BMW X5 under $50k' or 'luxury SUV low miles'…"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat();}"></textarea>
+      <button class="btn-chat-send" id="btn-chat-send" onclick="sendChat()" title="Send">↑</button>
     </div>
     <!-- Search history drawer -->
     <div class="chat-history-toggle" id="history-toggle" onclick="toggleHistoryPanel()" style="display:none">
@@ -1867,13 +1863,6 @@ a.dealer-link:hover { color: var(--gold); text-decoration: underline; }
       <span class="chat-history-count" id="history-count">0</span>
     </div>
     <div class="chat-history-panel" id="history-panel"></div>
-
-    <div class="chat-footer">
-      <textarea class="chat-input" id="chat-input" rows="2"
-        placeholder="Search for a car or ask any car question…"
-        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat();}"></textarea>
-      <button class="btn-chat-send" id="btn-chat-send" onclick="sendChat()" title="Send">↑</button>
-    </div>
   </aside>
 
 </div>
@@ -1976,10 +1965,6 @@ async function detectLocation() {
   });
 }
 
-// ─── Close card link dropdowns when clicking outside ─────────
-document.addEventListener('click', () => {
-  document.querySelectorAll('.card-links-wrap.open').forEach(el => el.classList.remove('open'));
-});
 
 // ─── Sidebar collapse ────────────────────────────────────────
 function toggleSidebar() {
@@ -2059,7 +2044,7 @@ async function updateUsage() {
 async function doSearch(page = 1) {
   const make = document.getElementById('inp-make').value.trim();
   const model = document.getElementById('inp-model').value.trim();
-  if(!make || !model) { toast('Use the chat on the right to search →'); return; }
+  if(!make || !model) { toast('Use the Concierge on the right →'); return; }
 
   currentPage = page;
   showLoading();
@@ -2093,8 +2078,6 @@ async function doSearch(page = 1) {
   if(filterOneOwner)    params.set('one_owner', 'true');
   const bodyStyle = document.getElementById('body-style-select')?.value;
   if(bodyStyle) params.set('body_style', bodyStyle);
-  const fuelType = document.getElementById('fuel-type-select')?.value;
-  if(fuelType) params.set('fuel_type', fuelType);
 
   try {
     const r = await fetch(`${API}/api/search?${params}`);
@@ -2106,7 +2089,7 @@ async function doSearch(page = 1) {
     updateInventoryHealth(make, model, year, state);
     loadFilters(make, model, year, state);
     if(!d.cached) toast('Live data — just synced from dealers');
-    loadMarketPulse();
+    loadMarketPulse(true);
   } catch(e) {
     showError(e.message);
   }
@@ -2313,12 +2296,11 @@ function updateClearAllVisibility() {
   const mileage   = document.getElementById('mileage-slider');
   const yearSlider= document.getElementById('year-slider');
   const color     = document.getElementById('color-select')?.value;
-  const fuelType  = document.getElementById('fuel-type-select')?.value;
   const zip       = document.getElementById('zip-code')?.value?.trim();
   const mileageActive = mileage && parseInt(mileage.value) < parseInt(mileage.max);
   const yearActive    = yearSlider && parseInt(yearSlider.value) > parseInt(yearSlider.min);
   const hasActiveFilter = currentCond || currentDrivetrain || filterNoAccidents || filterOneOwner
-    || maxPrice || mileageActive || yearActive || color || fuelType || zip;
+    || maxPrice || mileageActive || yearActive || color || zip;
   card.style.display = hasActiveFilter ? '' : 'none';
 }
 
@@ -2344,8 +2326,6 @@ function clearAllFilters() {
   if(ys) { ys.value = ys.min; updateYearLabel(ys.value); }
   // Color
   const cs = document.getElementById('color-select'); if(cs) cs.value = '';
-  // Fuel type
-  const fs = document.getElementById('fuel-type-select'); if(fs) fs.value = '';
   // Zip / radius
   const zc = document.getElementById('zip-code');       if(zc) zc.value = '';
   const rs = document.getElementById('radius-select');  if(rs) rs.value = '';
@@ -2363,6 +2343,8 @@ function renderResults(data, make, model) {
   // Hide initial empty state
   const emptyState = document.getElementById('initial-empty-state');
   if(emptyState) emptyState.style.display = 'none';
+  // Unlock page scroll now that listings exist
+  document.body.classList.remove('no-listings');
 
   // Stats bar
   document.getElementById('st-total').textContent = total.toLocaleString();
@@ -2401,7 +2383,12 @@ function renderResults(data, make, model) {
   const bdWrap = document.getElementById('best-deal-wrap');
   if(page === 1 && results.length > 0) {
     const b = results[0];
-    const savings = b.discount_amount ? '$'+Math.round(b.discount_amount).toLocaleString() : '';
+    const hasSavings = b.discount_amount && b.discount_amount > 0;
+    const hasMarkup = b.base_msrp && b.listing_price && b.listing_price > b.base_msrp;
+    let bdSavingsHtml = '';
+    if(hasSavings) bdSavingsHtml = `$${Math.round(b.discount_amount).toLocaleString()} below MSRP ${b.discount_pct ? '· '+b.discount_pct+'% off' : ''}`;
+    else if(hasMarkup) bdSavingsHtml = `<span style="color:#f87171">$${Math.round(b.listing_price - b.base_msrp).toLocaleString()} above MSRP</span>`;
+    else if(b.discount_pct) bdSavingsHtml = `${b.discount_pct}% off`;
     bdWrap.innerHTML = `
       <div class="best-deal-banner">
         <div>
@@ -2411,7 +2398,7 @@ function renderResults(data, make, model) {
         </div>
         <div class="bdb-price">
           <div class="bdb-price-val">${b.listing_price ? '$'+b.listing_price.toLocaleString() : 'N/A'}</div>
-          <div class="bdb-savings">${savings ? savings+' below MSRP' : ''} ${b.discount_pct ? '· '+b.discount_pct+'% off' : ''}</div>
+          <div class="bdb-savings">${bdSavingsHtml}</div>
         </div>
       </div>`;
   } else { bdWrap.innerHTML=''; }
@@ -2472,9 +2459,14 @@ function dealCard(r, idx) {
     ? `<img class="card-img" src="${r.primary_image}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" alt=""/><div class="card-img-placeholder" style="display:none;font-size:1.5rem;color:var(--muted)">—</div>`
     : `<div class="card-img-placeholder" style="font-size:1.5rem;color:var(--muted)">—</div>`;
 
-  const savingsText = r.discount_amount ? `↓ $${Math.round(r.discount_amount).toLocaleString()} off MSRP` : '';
   const priceDropText = isPriceDrop ? ` • was $${Math.round(r.prev_listing_price).toLocaleString()}` : '';
-  const savings = savingsText ? `<div class="card-savings">${savingsText}${priceDropText}</div>` : '';
+  let savings = '';
+  if(r.discount_amount && r.discount_amount > 0) {
+    savings = `<div class="card-savings">↓ $${Math.round(r.discount_amount).toLocaleString()} off MSRP${priceDropText}</div>`;
+  } else if(r.base_msrp && r.listing_price && r.listing_price > r.base_msrp) {
+    const markup = Math.round(r.listing_price - r.base_msrp);
+    savings = `<div class="card-markup">↑ $${markup.toLocaleString()} above MSRP</div>`;
+  }
   const metas = [];
   if(r.mileage) metas.push(`<span class="meta-tag">${r.mileage.toLocaleString()} mi</span>`);
   if(r.drivetrain) metas.push(`<span class="meta-tag">${r.drivetrain}</span>`);
@@ -2494,18 +2486,14 @@ function dealCard(r, idx) {
     }
   }
 
-  // Build links dropdown items
+  // Build inline action links (no dropdown)
   const isDirectDealer = r.listing_url && !r.listing_url.includes('auto.dev');
-  const linkItems = [];
-  if(r.listing_url) linkItems.push(`<a class="card-link-item" href="${r.listing_url}" target="_blank" onclick="event.stopPropagation()">${isDirectDealer ? 'View at Dealer' : 'Photos'}</a>`);
-  if(r.carfax_url)  linkItems.push(`<a class="card-link-item${r.accidents===0?' card-link-item--gold':''}" href="${r.carfax_url}" target="_blank" onclick="event.stopPropagation()">Carfax Report${r.accidents===0?' ✓':''}</a>`);
-  if(r.vin)         linkItems.push(`<a class="card-link-item" href="https://www.google.com/search?q=${r.vin}" target="_blank" onclick="event.stopPropagation()">Search VIN</a>`);
-  const linksDropdown = linkItems.length
-    ? `<div class="card-links-wrap" onclick="event.stopPropagation()">
-         <button class="btn-carfax card-links-toggle" onclick="this.closest('.card-links-wrap').classList.toggle('open')">Links ▾</button>
-         <div class="card-links-menu">${linkItems.join('')}</div>
-       </div>`
-    : '';
+  const dealerBtn = r.listing_url && isDirectDealer
+    ? `<a class="btn-carfax" href="${r.listing_url}" target="_blank" onclick="event.stopPropagation()">Dealer ↗</a>` : '';
+  const carfaxBtn = r.carfax_url
+    ? `<a class="btn-carfax${r.accidents===0?' btn-carfax--clean':''}" href="${r.carfax_url}" target="_blank" onclick="event.stopPropagation()">Carfax${r.accidents===0?' ✓':''}</a>` : '';
+  const vinBtn = r.vin
+    ? `<a class="btn-carfax" href="https://www.google.com/search?q=${r.vin}" target="_blank" onclick="event.stopPropagation()">VIN</a>` : '';
   const aiBtn = `<button class="btn-ai-analysis" onclick="event.stopPropagation();openAiAnalysis('${r.vin}', ${idx})">AI Analysis</button>`;
 
   return `
@@ -2556,8 +2544,9 @@ function dealCard(r, idx) {
     <div class="card-actions">
       <div class="card-actions-row">
         ${aiBtn}
-        <button class="btn-detail" onclick="event.stopPropagation();openModal(${idx})">Details</button>
-        ${linksDropdown}
+        ${carfaxBtn}
+        ${vinBtn}
+        ${dealerBtn}
       </div>
       <button class="btn-compare${compareMap.has(r.vin) ? ' comparing' : ''}" onclick="toggleCompare('${r.vin}',${idx},event)">${compareMap.has(r.vin) ? 'Comparing — click to remove' : 'Add to Compare'}</button>
     </div>
@@ -2575,7 +2564,7 @@ function openModal(idx) {
     ['Listed Price', r.listing_price ? '$'+r.listing_price.toLocaleString() : '—'],
     ['Base MSRP', r.base_msrp ? '$'+r.base_msrp.toLocaleString() : '—'],
     ['Discount', r.discount_pct ? r.discount_pct+'% off' : '—'],
-    ['Savings', r.discount_amount ? '$'+Math.round(r.discount_amount).toLocaleString() : '—'],
+    ['Savings', r.discount_amount && r.discount_amount > 0 ? '$'+Math.round(r.discount_amount).toLocaleString()+' off' : (r.base_msrp && r.listing_price && r.listing_price > r.base_msrp ? '$'+Math.round(r.listing_price - r.base_msrp).toLocaleString()+' above MSRP' : '—')],
     ['Condition', r.is_cpo ? 'CPO Certified' : r.is_used ? 'Pre-Owned' : 'New'],
     ['Mileage', r.mileage ? r.mileage.toLocaleString()+' miles' : '0 miles'],
     ['Engine', r.engine||'—'],
@@ -2597,15 +2586,15 @@ function openModal(idx) {
     ['First Seen', r.first_seen_at ? new Date(r.first_seen_at*1000).toLocaleDateString() : '—'],
     ['Last Seen', r.last_seen_at  ? new Date(r.last_seen_at*1000).toLocaleDateString()  : '—'],
     ['Status', r.status === 'active' ? 'Active' : 'Removed'],
-    ['Listing', r.listing_url ? `<a href="${r.listing_url}" target="_blank" style="color:var(--gold);text-decoration:none;font-weight:600">${r.listing_url.includes('auto.dev') ? 'Photos on auto.dev →' : 'View at dealer →'}</a>` : '—'],
+    ['Listing', (r.listing_url && !r.listing_url.includes('auto.dev')) ? `<a href="${r.listing_url}" target="_blank" style="color:var(--gold);text-decoration:none;font-weight:600">View at dealer →</a>` : '—'],
   ];
 
   const carfaxLink = r.carfax_url
     ? `<a href="${r.carfax_url}" target="_blank" style="display:block;padding:9px 14px;background:rgba(74,144,112,.08);border:1px solid rgba(74,144,112,.18);border-radius:6px;color:var(--emerald);font-weight:500;font-size:.8rem;text-decoration:none;text-align:center;letter-spacing:.01em">View Full Carfax Report</a>`
     : '';
   const isModalDirectDealer = r.listing_url && !r.listing_url.includes('auto.dev');
-  const dealerLink = r.listing_url
-    ? `<a href="${r.listing_url}" target="_blank" style="display:block;padding:9px 14px;background:var(--gold-soft);border:1px solid rgba(196,162,83,.2);border-radius:6px;color:var(--gold);font-weight:500;font-size:.8rem;text-decoration:none;text-align:center;letter-spacing:.01em">${isModalDirectDealer ? 'View Full Listing at Dealer Website' : 'View Photos on auto.dev'}</a>`
+  const dealerLink = (r.listing_url && isModalDirectDealer)
+    ? `<a href="${r.listing_url}" target="_blank" style="display:block;padding:9px 14px;background:var(--gold-soft);border:1px solid rgba(196,162,83,.2);border-radius:6px;color:var(--gold);font-weight:500;font-size:.8rem;text-decoration:none;text-align:center;letter-spacing:.01em">View Full Listing at Dealer Website</a>`
     : '';
   const vinSearchLink = r.vin
     ? `<a href="https://www.google.com/search?q=${r.vin}" target="_blank" style="display:block;padding:9px 14px;background:rgba(74,122,181,.06);border:1px solid rgba(74,122,181,.15);border-radius:6px;color:var(--blue2);font-weight:500;font-size:.8rem;text-decoration:none;text-align:center;letter-spacing:.01em">Search VIN: Find Dealer, CarGurus &amp; AutoTrader</a>`
@@ -2615,7 +2604,6 @@ function openModal(idx) {
     : '';
 
   document.getElementById('modal-body').innerHTML = `
-    ${r.primary_image ? `<img src="${r.primary_image}" style="width:100%;height:200px;object-fit:cover;border-radius:12px" onerror="this.style.display='none'"/>` : ''}
     <div class="detail-grid">${fields.map(([l,v])=>`<div class="detail-item"><div class="detail-label">${l}</div><div class="detail-value">${v}</div></div>`).join('')}</div>
     ${ctaLinks}`;
 
@@ -2630,6 +2618,8 @@ document.addEventListener('keydown', e => { if(e.key==='Escape') { closeModal();
 
 // ─── Pagination ──────────────────────────────────────────────
 function renderPagination(page, pages) {
+  page  = Math.max(1, parseInt(page)  || 1);
+  pages = Math.max(0, parseInt(pages) || 0);
   const pg = document.getElementById('pagination');
   if(pages <= 1) { pg.innerHTML=''; return; }
   let html = `<button class="page-btn" ${page<=1?'disabled':''} onclick="doSearch(${page-1})">← Prev</button>`;
@@ -2713,28 +2703,6 @@ function hideChatThinking() {
   if(chatThinkingEl) { chatThinkingEl.remove(); chatThinkingEl = null; }
   const old = document.getElementById('chat-thinking');
   if(old) old.remove();
-}
-
-function appendToolCalls(toolCalls) {
-  const msgs = document.getElementById('chat-messages');
-  toolCalls.forEach(tc => {
-    const div = document.createElement('div');
-    div.className = 'chat-tool-call';
-    const fmtJson = obj => JSON.stringify(obj, null, 2);
-    div.innerHTML = `
-      <div class="tool-call-header" onclick="this.parentElement.classList.toggle('open')">
-        <span>${tc.label}</span>
-        <span class="tool-toggle">▼</span>
-      </div>
-      <div class="tool-call-body">
-        <div class="tool-io-label">Input</div>
-        <pre class="tool-json">${fmtJson(tc.input)}</pre>
-        <div class="tool-io-label">Output</div>
-        <pre class="tool-json">${fmtJson(tc.output)}</pre>
-      </div>`;
-    msgs.appendChild(div);
-  });
-  msgs.scrollTop = msgs.scrollHeight;
 }
 
 // ─── Chat History ────────────────────────────────────────
@@ -2900,11 +2868,6 @@ async function sendChat() {
       return;
     }
 
-    // Show tool calls (collapsible)
-    if(d.tool_calls && d.tool_calls.length) {
-      appendToolCalls(d.tool_calls);
-    }
-
     const intent = d.intent || {};
 
     // Update hidden form fields for filter interactions
@@ -2913,22 +2876,67 @@ async function sendChat() {
     document.getElementById('inp-year').value  = intent.year  || '';
     document.getElementById('inp-state').value = intent.state || '';
     if(intent.max_price) document.getElementById('max-price').value = intent.max_price;
-    if(intent.condition) {
-      currentCond = intent.condition;
-      document.querySelectorAll('#sidebar-cond-chips .filter-chip').forEach(c =>
-        c.classList.toggle('active', c.dataset.val === intent.condition));
+
+    // Always sync condition — clear to 'All' if intent didn't specify one
+    // (prevents stale condition from a previous search silently filtering results)
+    const newCond = intent.condition || '';
+    currentCond = newCond;
+    document.querySelectorAll('#sidebar-cond-chips .filter-chip').forEach(c =>
+      c.classList.toggle('active', c.dataset.val === newCond));
+    document.querySelectorAll('#cond-chips .chip').forEach(c =>
+      c.classList.toggle('active', c.dataset.val === newCond));
+
+    // Sync geo fields — so subsequent doSearch calls use the same key as /api/chat
+    const zipEl = document.getElementById('zip-code');
+    const radEl = document.getElementById('radius-select');
+    if(zipEl) zipEl.value = intent.zip_code || '';
+    if(radEl && intent.radius_miles) radEl.value = String(intent.radius_miles);
+    else if(radEl && !intent.zip_code) radEl.value = '';
+
+    // ── Sync sidebar filters to match chat intent ──────────────
+    if(intent.drivetrain) {
+      currentDrivetrain = intent.drivetrain;
+      document.querySelectorAll('#drivetrain-chips .filter-chip').forEach(c =>
+        c.classList.toggle('active', c.textContent.trim() === intent.drivetrain));
+    } else {
+      currentDrivetrain = '';
+      document.querySelectorAll('#drivetrain-chips .filter-chip').forEach(c =>
+        c.classList.toggle('active', c.textContent.trim() === 'All'));
     }
-    if(intent.drivetrain) currentDrivetrain = intent.drivetrain;
-    if(intent.no_accidents) filterNoAccidents = true;
-    if(intent.one_owner)    filterOneOwner    = true;
+    filterNoAccidents = !!intent.no_accidents;
+    filterOneOwner    = !!intent.one_owner;
+    document.getElementById('toggle-no-accidents').className = 'toggle-switch' + (filterNoAccidents ? ' on' : '');
+    document.getElementById('toggle-one-owner').className    = 'toggle-switch' + (filterOneOwner ? ' on' : '');
     if(intent.body_style) {
       const bss = document.getElementById('body-style-select');
       if(bss) bss.value = intent.body_style;
     }
-    if(intent.fuel_type) {
-      const fts = document.getElementById('fuel-type-select');
-      if(fts) fts.value = intent.fuel_type;
+    // Mileage slider
+    if(intent.max_mileage) {
+      const ms = document.getElementById('mileage-slider');
+      if(ms) {
+        const target = parseInt(intent.max_mileage);
+        // Ensure slider max accommodates the value
+        if(target > parseInt(ms.max)) ms.max = Math.ceil(target / 5000) * 5000;
+        ms.value = target;
+        updateMileageLabel(ms.value);
+      }
     }
+    // Year slider
+    if(intent.year_from) {
+      const ys = document.getElementById('year-slider');
+      if(ys) {
+        const target = parseInt(intent.year_from);
+        if(target >= parseInt(ys.min) && target <= parseInt(ys.max)) ys.value = target;
+        updateYearLabel(ys.value);
+      }
+    }
+    // Min price
+    if(intent.min_price) {
+      const mp = document.getElementById('min-price');
+      if(mp) mp.value = intent.min_price;
+    }
+    updateClearAllVisibility();
 
     // Render listings
     lastResults = d.results || [];
@@ -3335,7 +3343,7 @@ function renderCompareTable() {
     ['Listed Price',    r => r.listing_price  ? '$'+r.listing_price.toLocaleString()    : '—', true,  r => r.listing_price],
     ['Base MSRP',       r => r.base_msrp      ? '$'+r.base_msrp.toLocaleString()        : '—', null,  null],
     ['Discount',        r => r.discount_pct   ? r.discount_pct.toFixed(1)+'% off'       : '—', false, r => r.discount_pct],
-    ['Savings',         r => r.discount_amount? '$'+Math.round(r.discount_amount).toLocaleString(): '—', false, r => r.discount_amount],
+    ['Savings',         r => r.discount_amount && r.discount_amount > 0 ? '$'+Math.round(r.discount_amount).toLocaleString()+' off' : (r.base_msrp && r.listing_price && r.listing_price > r.base_msrp ? '$'+Math.round(r.listing_price - r.base_msrp).toLocaleString()+' above' : '—'), false, r => r.discount_amount > 0 ? r.discount_amount : 0],
     ['Mileage',         r => r.mileage        ? r.mileage.toLocaleString()+' mi'        : '0 mi', true, r => r.mileage],
     ['Deal Score',      r => ((r.score||0)*100).toFixed(0)+'/100',                        false, r => r.score],
     ['Accidents',       r => r.accidents != null ? r.accidents+' reported'               : '—', true,  r => r.accidents],

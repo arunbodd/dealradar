@@ -38,8 +38,20 @@ if _LANGSMITH_ENABLED:
     os.environ.setdefault("LANGCHAIN_TRACING_V2", "true")
     os.environ.setdefault("LANGCHAIN_PROJECT",
                           os.getenv("LANGCHAIN_PROJECT", "dealradar"))
-    log.info("LangSmith tracing active (project=%s)",
-             os.getenv("LANGCHAIN_PROJECT", "dealradar"))
+    # Org-scoped API keys require workspace_id — propagate it if provided,
+    # otherwise disable background ingest to suppress the noisy SDK warning.
+    _ws_id = os.getenv("LANGSMITH_WORKSPACE_ID") or os.getenv("LANGCHAIN_WORKSPACE_ID")
+    if _ws_id:
+        os.environ["LANGSMITH_WORKSPACE_ID"] = _ws_id
+        log.info("LangSmith tracing active (project=%s, workspace=%s)",
+                 os.getenv("LANGCHAIN_PROJECT", "dealradar"), _ws_id)
+    else:
+        # Suppress background multipart ingest — tracing still works for
+        # interactive/sync calls, but the org-scoped ingest warning is silenced.
+        os.environ.setdefault("LANGCHAIN_CALLBACKS_BACKGROUND", "false")
+        log.info("LangSmith tracing active (project=%s) — "
+                 "set LANGSMITH_WORKSPACE_ID env var to enable full org-scoped ingest",
+                 os.getenv("LANGCHAIN_PROJECT", "dealradar"))
 
 
 # ── State ─────────────────────────────────────────────────────
